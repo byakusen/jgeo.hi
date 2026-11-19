@@ -53,7 +53,7 @@
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         padding: 20px;
         width: 98%;
-        max-width: 1040px; /* 10列グリッド＋右側にボタン・テンキー */
+        max-width: 1300px; /* 10列グリッド＋右側にボタン・テンキー */
         display: flex;
         flex-direction: column;
         gap: 20px;
@@ -820,11 +820,13 @@
     .mx-wrap { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
     .mx-side { display: flex; flex-direction: column; align-items: center; gap: 5px; background: #fff; border: 3px solid #ffe0b2; border-radius: 16px; padding: 6px 10px; }
     .mx-title { font-size: 1.2rem; color: #e65100; }
-    .mx-glass { width: 76px; height: 100px; border: 4px solid #90a4ae; border-top: none; border-radius: 0 0 16px 16px; position: relative; background: rgba(255,255,255,0.7); overflow: hidden; }
+    .mx-body { display: flex; align-items: center; gap: 10px; }
+    .mx-info { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .mx-glass { width: 120px; height: 180px; border: 4px solid #90a4ae; border-top: none; border-radius: 0 0 16px 16px; position: relative; background: rgba(255,255,255,0.7); overflow: hidden; }
     .mx-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; transition: height 0.4s, background 0.4s; }
     .mx-row { display: flex; align-items: center; gap: 4px; font-size: 1.1rem; }
     .mx-lab { width: 2.2em; }
-    .mx-cups { display: flex; flex-wrap: wrap; gap: 2px; width: 91px; min-height: 15px; align-content: center; }
+    .mx-cups { display: flex; flex-wrap: wrap; gap: 2px; width: 78px; min-height: 15px; align-content: center; }
     .mx-cups i { display: block; width: 11px; height: 15px; border-radius: 0 0 4px 4px; }
     .mx-cups i.j { background: #ef6c00; }
     .mx-cups i.w { background: #64b5f6; }
@@ -858,7 +860,8 @@
         .hi-choices { gap: 8px; padding: 8px; }
         .hi-tape, .hi-tape-wrap { width: 300px; }
         .mx-wrap { gap: 8px; }
-        .mx-glass { height: 80px; }
+        .mx-body { flex-direction: column; }
+        .mx-glass { width: 100px; height: 130px; }
     }
 </style>
 </head>
@@ -1864,15 +1867,14 @@ function mixLay(P, Q, k1, k2) {
         sig: `imi1:${P}:${Q}:${k1}:${k2}`,
         html: `<div class="hi-q">ジュースの もとと 水を まぜて、ジュースを 作ります。<span class="hi-ask">見本と 同じ 味</span>の ジュースを 作りましょう。</div>
                <div class="mx-wrap">
-                 <div class="mx-side"><div class="mx-title">見本</div><div class="mx-glass"><div class="mx-fill" id="mxF0"></div></div>
-                   ${row(false, 'j', 'もと', P)}${row(false, 'w', '水', Q)}<div class="mx-ratio">${P}：${Q}</div></div>
-                 <div class="mx-side" id="mxSelf"><div class="mx-title">自分</div><div class="mx-glass"><div class="mx-fill" id="mxF1"></div></div>
-                   ${row(true, 'j', 'もと')}${row(true, 'w', '水')}<div class="mx-ratio" id="mxR1"></div></div>
+                 <div class="mx-side"><div class="mx-title">見本</div><div class="mx-body"><div class="mx-glass"><div class="mx-fill" id="mxF0"></div></div>
+                   <div class="mx-info">${row(false, 'j', 'もと', P)}${row(false, 'w', '水', Q)}<div class="mx-ratio">${P}：${Q}</div></div></div></div>
+                 <div class="mx-side" id="mxSelf"><div class="mx-title">自分</div><div class="mx-body"><div class="mx-glass"><div class="mx-fill" id="mxF1"></div></div>
+                   <div class="mx-info">${row(true, 'j', 'もと')}${row(true, 'w', '水')}<div class="mx-ratio" id="mxR1"></div></div></div></div>
                </div>
-               <div class="hi-fbtns"><button type="button" class="hi-fbtn ok" id="mxOk" data-k="ok">できた</button></div>
-               <div class="hi-line" id="mxRec" style="color:#d32f2f;min-height:1.5em"></div>
+               <div class="hi-fbtns" style="align-items:center"><button type="button" class="hi-fbtn ok" id="mxOk" data-k="ok">できた</button><span class="hi-line" id="mxRec" style="color:#d32f2f"></span></div>
                <div class="hi-later" id="mxHint" style="font-size:1.1rem;color:#1565c0"></div>
-               <div class="hi-work hi-later" id="hiWork">比が 等しいと、同じ 味（こさ）に なる。${P}：${Q} ＝ ${J1}：${W1} ＝ ${J2}：${W2}（比の値は どれも ${VAL(P, Q)}）</div>`,
+               <div class="hi-work hi-later" id="hiWork" style="max-width:none">比が 等しいと、同じ 味（こさ）に なる。${P}：${Q} ＝ ${J1}：${W1} ＝ ${J2}：${W2}（比の値は どれも ${VAL(P, Q)}）</div>`,
         slots: [],
         makeStates: () => [
             { text: `もとを ${J1}カップに したよ。水を 何カップ 入れると、見本と 同じ 味に なるかな。「＋」「−」で 入れて、「できた」を おそう。`, type: 'mix', step: 0 },
