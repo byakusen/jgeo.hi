@@ -1,0 +1,3476 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>比（6年）</title>
+<!--
+  ============================================================
+  6年算数「比」 第1版（2026-11-15）
+  タブ：比で表す／比の値／等しい比／比を簡単に／xの表す数／比の文章題
+  （テスト「算数6年 東 αⅠ⑤ 5.比」の おもて・うら の 問題の形）
+  土台：計算アプリ ひな形 第1版
+  第2版（2026-11-19）：等しい比を作る（hito3）・比の意味（imi1）を 足した
+  ============================================================
+  ここから下は ひな形の もとの 説明
+  計算アプリ ひな形 第1版（2026-11-15）
+  もとにしたもの：小数のかけ算とわり算の筆算（59）
+  のこした土台：タブと小タブ／手順の進め方（states）／テンキー／ヒント／
+               はなまる・紙吹雪・ピンポン／まちがいのブブー・ゆれ／連続正解／
+               10問チャレンジ／📝テストの練習（⓪①②）／もう一度
+  見本のタブ：①わり算の筆算（たてる・かける・ひく・おろす）
+             ②計算（式の答えを▢に入れる）
+  くわしくは「計算アプリ_ひな形1_引き継ぎメモ.md」
+  ============================================================
+-->
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<style>
+    :root {
+        --primary-color: #fff500;
+        --hint-color: #4caf50;
+        --wrong-color: #ff5252;
+        --cell-size: 50px;
+    }
+
+    body {
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+        font-family: 'M PLUS Rounded 1c', sans-serif;
+        touch-action: manipulation; /* ダブルタップズーム防止 */
+        overflow: hidden; /* スマホでの不意なスクロールを防止 */
+    }
+
+    #app-container {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        padding: 20px;
+        width: 98%;
+        max-width: 1040px; /* 10列グリッド＋右側にボタン・テンキー */
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* ===== 上のタブ ===== */
+    .settings {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px 8px;
+        background: #fff;
+        padding: 10px 12px;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 5px;
+    }
+    .tab-btn {
+        font-family: inherit;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #6a5acd;
+        background: #eef0ff;
+        border: 2px solid #c9cdf5;
+        border-radius: 12px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: all 0.15s;
+        box-shadow: 0 2px 0 #c9cdf5;
+    }
+    .tab-btn:hover { background: #e2e6ff; }
+    .tab-btn.active {
+        color: #fff;
+        background: #6a5acd;
+        border-color: #5a4abd;
+        box-shadow: 0 3px 0 #4a3aad;
+    }
+    /* タブの色のちがい（見本：オレンジ）。タブをふやすときは、この形で色を足す */
+    .tab-btn.kake-tab {
+        color: #e65100;
+        background: #fff3e0;
+        border-color: #ffcc80;
+        box-shadow: 0 2px 0 #ffcc80;
+    }
+    .tab-btn.kake-tab:hover { background: #ffe0b2; }
+    .tab-btn.kake-tab.active {
+        color: #fff;
+        background: #fb8c00;
+        border-color: #ef6c00;
+        box-shadow: 0 3px 0 #e65100;
+    }
+
+    /* ===== 小タブ（上のタブの下に出る） ===== */
+    .level-wrap {
+        display: none;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 96%;
+        gap: 8px;
+        width: fit-content;
+        margin: -15px auto 5px;
+        background: #fff;
+        border-radius: 12px;
+        padding: 5px 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .level-btn {
+        font-size: 1rem;
+        padding: 6px 18px;
+        border-radius: 10px;
+        background: #e0f2f1;
+        color: #00796b;
+        border: 2px solid #80cbc4;
+        box-shadow: none;
+    }
+    .level-btn:hover { background: #b2dfdb; }
+    .level-btn.active {
+        background: #00897b;
+        color: #fff;
+        border-color: #00695c;
+    }
+    /* 「ランダム」だけピンクにして目立たせる */
+    .level-btn.random-btn {
+        background: #fce4ec;
+        color: #c2185b;
+        border-color: #f48fb1;
+    }
+    .level-btn.random-btn:hover { background: #f8bbd0; }
+    .level-btn.random-btn.active {
+        background: #e91e63;
+        color: #fff;
+        border-color: #ad1457;
+    }
+
+    /* おろすときの ↓ */
+    .guide-arrow {
+        position: absolute;
+        top: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 2rem;
+        color: #ff9800;
+        pointer-events: none;
+        animation: bounceDown 1s infinite;
+        z-index: 50;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    @keyframes bounceDown {
+        0%, 100% { transform: translate(-50%, 0); }
+        50% { transform: translate(-50%, 10px); }
+    }
+    #combo-count {
+        display: inline-block;
+        transition: transform 0.2s;
+    }
+
+    /* 指示の文 */
+    .header {
+        text-align: center;
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #333;
+        min-height: 3rem;
+        background: #e1f5fe;
+        border-radius: 12px;
+        padding: 10px 20px;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        transition: opacity 0.3s;
+    }
+
+    .main-content {
+        display: flex;
+        flex-direction: row;
+        gap: 26px;
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+
+    @media (max-width: 600px) {
+        .main-content {
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .header {
+            font-size: 1.1rem;
+            min-height: 2.5rem;
+        }
+    }
+
+    /* ===== マス目エリア ===== */
+    .grid-wrapper {
+        background-color: white;
+        border: 2px solid #00bcd4;
+        border-radius: 8px;
+        padding: 0;
+        position: relative;
+        display: inline-block;
+        box-shadow: inset 0 0 10px rgba(0,188,212,0.2);
+        align-self: flex-start;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(10, var(--cell-size));
+        grid-template-rows: repeat(8, var(--cell-size));
+        gap: 0;
+        background-color: white;
+        background-image:
+            linear-gradient(to right, #b2ebf2 2px, transparent 2px),
+            linear-gradient(to bottom, #b2ebf2 2px, transparent 2px);
+        background-size: var(--cell-size) var(--cell-size);
+        background-position: 0 0;
+        border-radius: 6px;
+    }
+
+    .cell {
+        width: var(--cell-size);
+        height: var(--cell-size);
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2.2rem;
+        font-weight: bold;
+        line-height: 1;
+        color: #333;
+        position: relative;
+        user-select: none;
+        transition: background-color 0.2s, transform 0.2s;
+    }
+
+    /* わり算の「）」を .paren-left が付いたセルの左端に重ねる */
+    .paren-left {
+        position: relative;
+        overflow: visible;
+    }
+    .paren-left::before {
+        content: ")";
+        position: absolute;
+        left: 0;
+        top: 46%;
+        transform: translate(-50%, -50%) scale(1, 1.25);
+        font-size: 2.2rem;
+        font-weight: bold;
+        line-height: 1;
+        color: #333;
+        pointer-events: none;
+    }
+
+    /* 筆算の線 */
+    .border-bottom { border-bottom: 3px solid #333; }
+    .border-hidden { border-color: transparent; }
+
+    /* 商の下線（かっこの上線）を少し下げる */
+    [id^="cell-r0-"].border-bottom {
+        border-bottom: none;
+    }
+    [id^="cell-r0-"]::after {
+        content: '';
+        position: absolute;
+        bottom: -8%;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #333;
+        display: none;
+        z-index: 10;
+    }
+    [id^="cell-r0-"].border-bottom::after {
+        display: block;
+    }
+
+    .fade-in { animation: cellFade 0.4s ease-out; }
+    @keyframes cellFade {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    /* ===== 右のボタン ===== */
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 118px;
+    }
+
+    button {
+        font-family: inherit;
+        font-size: 1.2rem;
+        padding: 12px 15px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #f0f0f0, #cacaca);
+        box-shadow: 3px 3px 6px rgba(0,0,0,0.1), inset 1px 1px 2px rgba(255,255,255,0.8);
+        cursor: pointer;
+        font-weight: bold;
+        color: #333;
+        transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
+    }
+
+    button:active {
+        transform: translateY(2px);
+        box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    button.action-btn {
+        background: var(--primary-color);
+        border: 2px solid #e6c200;
+        box-shadow: 0 4px 0 #c4a600;
+    }
+    button.action-btn:active {
+        box-shadow: 0 0 0 #c4a600;
+        transform: translateY(4px);
+    }
+
+    button.hint-btn {
+        background: var(--hint-color);
+        color: white;
+        border: 2px solid #388e3c;
+        box-shadow: 0 4px 0 #2e7d32;
+    }
+    button.hint-btn:active {
+        box-shadow: 0 0 0 #2e7d32;
+        transform: translateY(4px);
+    }
+
+    button.reset-btn {
+        background: var(--wrong-color);
+        color: white;
+        border: 2px solid #d50000;
+        box-shadow: 0 4px 0 #b71c1c;
+        margin-top: auto;
+    }
+    button.reset-btn:active {
+        box-shadow: 0 0 0 #b71c1c;
+        transform: translateY(4px);
+    }
+
+    .hint-row { display: flex; gap: 8px; }
+    .hint-row > button { flex: 1; }
+
+    /* 計算タブ：たてる〜おろす は使わないので出さない（ヒントと もう一度 はのこす） */
+    .controls.kei-mode .action-btn { display: none; }
+
+    /* ===== 計算タブ：式と答えの▢ ===== */
+    #kei-panel {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 36px;
+        min-width: 420px;
+        box-sizing: border-box;
+    }
+    #kei-shiki {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 2.6rem;
+        font-weight: bold;
+        color: #333;
+        white-space: nowrap;
+    }
+    #kei-shiki .ans-frame { height: 72px; min-width: 96px; }
+    #kei-shiki .ten-box { width: 34px; height: 66px; font-size: 2.6rem; color: #e53935; }
+
+    /* 答えを入れる大きな▢。1文字ずつの箱にすると何けたか分かってしまうので、
+       枠は1つにして、入れた文字だけを中に出す */
+    .ten-boxes {
+        display: flex;
+        gap: 3px;
+        align-items: center;
+    }
+    .ten-box {
+        width: 36px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.1rem;
+        font-weight: bold;
+        color: #333;
+        position: relative;
+    }
+    .ans-frame {
+        gap: 0;
+        min-width: 68px;
+        height: 58px;
+        box-sizing: border-box;
+        padding: 0 6px;
+        justify-content: center;
+        border: 3px dashed #c4c4c4;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.02);
+    }
+    .ans-frame.active { border-color: #ff9800; background: rgba(255, 152, 0, 0.1); }
+    .ans-frame.filled { border-style: solid; border-color: #90caf9; background: #fff; }
+
+    /* ===== 10問チャレンジ ===== */
+    .chal-btn {
+        font-size: 1rem;
+        font-weight: bold;
+        color: #6a1b9a;
+        background: #f3e5f5;
+        border: 2px solid #ce93d8;
+        border-radius: 20px;
+        padding: 7px 16px;
+        box-shadow: 0 2px 0 #ce93d8;
+    }
+    .chal-btn.on {
+        color: #fff;
+        background: #8e24aa;
+        border-color: #6a1b9a;
+        box-shadow: 0 2px 0 #4a148c;
+    }
+    #chal-bar {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 20px;
+        padding: 6px 16px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        font-weight: bold;
+        color: #6a1b9a;
+        white-space: nowrap;
+    }
+    #chal-dots { color: #8e24aa; letter-spacing: 2px; font-size: 1.05rem; }
+    #chal-result {
+        display: none;
+        position: fixed;
+        left: 0; top: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 900;
+        align-items: center;
+        justify-content: center;
+    }
+    #chal-result.show { display: flex; }
+    .chal-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 28px 34px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        text-align: center;
+        max-width: 90vw;
+    }
+    .chal-title { font-size: 1.8rem; font-weight: bold; color: #8e24aa; margin-bottom: 14px; }
+    .chal-lines { font-size: 1.25rem; font-weight: bold; color: #333; line-height: 2; }
+    .chal-lines b { color: #e53935; font-size: 1.5rem; }
+    .chal-msg { margin-top: 10px; color: #ff6f00; }
+    .chal-btns { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+    .chal-btns button { padding: 12px 20px; font-size: 1.1rem; }
+
+    /* ===== テンキーの下の ×・÷・＋・− のキー（式を入れるタブ用。見本では使っていない） ===== */
+    .op-pad {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+        margin-top: 8px;
+        background: #ede7f6;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.2s;
+        min-width: 160px;
+    }
+    .op-pad.visible { visibility: visible; opacity: 1; }
+    .op-btn {
+        color: #5e35b1;
+        font-size: 1.5rem;
+        background: white;
+        box-shadow: 0 2px 0 #b39ddb;
+    }
+    .op-btn:active { box-shadow: 0 0 0 #b39ddb; transform: translateY(2px); }
+
+    /* ===== テンキー ===== */
+    .numpad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        margin-top: 0;
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.2s;
+        align-content: start;
+        min-width: 160px;
+    }
+    .numpad.visible {
+        visibility: visible;
+        opacity: 1;
+    }
+    .num-btn {
+        padding: 10px 0;
+        font-size: 1.4rem;
+        background: white;
+        box-shadow: 0 2px 0 #ccc;
+    }
+    .num-btn:active {
+        box-shadow: 0 0 0 #ccc;
+        transform: translateY(2px);
+    }
+
+    @media (max-width: 600px) {
+        .controls {
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button { font-size: 1rem; padding: 10px; }
+        button.reset-btn { margin-top: 10px; width: 100%; }
+        .numpad { display: none; }
+        .numpad.visible { display: grid; }
+        .op-pad { display: none; }
+        .op-pad.visible { display: grid; }
+        /* 計算タブはスマホでは少し小さく */
+        #kei-panel { min-width: 0; width: 100%; padding: 18px 10px; }
+        .controls.kei-mode .reset-btn { width: auto; margin-top: 0; }   /* ヒントと もう一度 を横にならべる */
+        #kei-shiki { font-size: 1.9rem; gap: 8px; }
+        #kei-shiki .ans-frame { height: 58px; min-width: 76px; }
+        #kei-shiki .ten-box { width: 26px; height: 54px; font-size: 1.9rem; }
+    }
+
+    /* ===== アニメーション・エフェクト ===== */
+    .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-2px, 0, 0); }
+        20%, 80% { transform: translate3d(4px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+        40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    .hint-glow { animation: glow 1s infinite alternate; }
+    @keyframes glow {
+        from { box-shadow: 0 0 5px #ffeb3b, inset 0 0 5px #ffeb3b; background-color: rgba(255,235,59,0.4); }
+        to { box-shadow: 0 0 15px #ff9800, inset 0 0 15px #ff9800; background-color: rgba(255,152,0,0.7); }
+    }
+
+    .selected {
+        background-color: rgba(33, 150, 243, 0.3);
+        border-radius: 50%;
+    }
+    .selected-group-left {
+        background-color: rgba(33, 150, 243, 0.3);
+        border-radius: 25px 0 0 25px;
+    }
+    .selected-group-mid {
+        background-color: rgba(33, 150, 243, 0.3);
+        border-radius: 0;
+    }
+    .selected-group-right {
+        background-color: rgba(33, 150, 243, 0.3);
+        border-radius: 0 25px 25px 0;
+    }
+
+    .red-text { color: red; }
+
+    /* 数を入れるマスの点線の箱 */
+    .box-input {
+        border: 3px dashed #ff9800;
+        width: 80%;
+        height: 80%;
+        border-radius: 8px;
+        background: rgba(255, 152, 0, 0.1);
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ドラッグ用（おろす） */
+    .draggable-span {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        touch-action: none;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 100;
+        color: #00bcd4;
+    }
+    .draggable-span:active { cursor: grabbing; }
+
+    /* まちがいのポップアップ */
+    #popup {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--wrong-color);
+        color: white;
+        padding: 10px 30px;
+        border-radius: 30px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 1000;
+    }
+    #popup.show { opacity: 1; }
+
+    /* 花丸 */
+    #hanamaru {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        width: 200px;
+        height: 200px;
+        pointer-events: none;
+        opacity: 0;
+        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s;
+        background: url('https://github.com/byakusen/hanamaru/blob/main/hanamaru2.png?raw=true') no-repeat center center;
+        background-size: contain;
+        z-index: 500;
+    }
+    #hanamaru.show {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+
+    /* ===== 比のタブ：問題の板（マスの代わりに出す） ===== */
+    #hi-panel {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 18px;
+        min-width: 580px;
+        min-height: 300px;
+        box-sizing: border-box;
+        font-weight: bold;
+        color: #333;
+    }
+    .hi-q { font-size: 1.15rem; line-height: 1.55; max-width: 600px; align-self: stretch; }
+    .hi-ask { color: #1565c0; }
+    .hi-big { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 2.5rem; white-space: nowrap; }
+    .hi-sm { font-size: 1.3rem; color: #555; }
+    .hi-note { font-size: 1rem; color: #777; }
+    .hi-line { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px; font-size: 1.4rem; }
+    .hi-work { font-size: 1.25rem; color: #d32f2f; display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 600px; }
+    .hi-val { font-size: 1.1rem; color: #d32f2f; display: inline-flex; align-items: center; gap: 2px; }
+    .hi-later { visibility: hidden; opacity: 0; transition: opacity 0.4s; }
+    .hi-later.show { visibility: visible; opacity: 1; }
+    .hi-x { font-family: 'Times New Roman', serif; font-style: italic; font-weight: bold; }
+
+    /* 分数（上下に ならべる） */
+    .hi-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.1; }
+    .hi-frac > .bar { align-self: stretch; min-width: 0.8em; border-top: 3px solid currentColor; margin: 3px 0; }
+
+    /* 答えを入れる▢ */
+    #hi-panel .ans-frame { height: 64px; min-width: 76px; }
+    #hi-panel .ten-box { width: 32px; height: 58px; font-size: 2.3rem; color: #e53935; }
+    #hi-panel .hi-line .ans-frame, #hi-panel .hi-frac .ans-frame { height: 42px; min-width: 54px; }
+    #hi-panel .hi-line .ten-box, #hi-panel .hi-frac .ten-box { width: 24px; height: 38px; font-size: 1.7rem; }
+    #hi-panel .hi-arc .ans-frame { height: 40px; min-width: 44px; padding: 0 4px; }
+    #hi-panel .hi-arc .ten-box { width: 20px; height: 36px; font-size: 1.5rem; }
+
+    /* 比の値（整数）：「：」（ヒントで 横線が 出て「÷」に なる） */
+    .hi-colon { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.12em; width: 0.7em; }
+    .hi-colon b { width: 0.2em; height: 0.2em; border-radius: 50%; background: currentColor; }
+    .hi-colon i { display: block; width: 0.62em; height: 0.09em; border-radius: 0.05em; background: #e53935; transform: scaleX(0); transition: transform 0.5s; }
+    .hi-colon.on i { transform: scaleX(1); }
+    .hi-dot { position: relative; display: inline-block; }
+    .hi-dot::after {
+        content: ''; position: absolute; left: 50%; bottom: 0; width: 0.5em; height: 0.75em; transform: translateX(-50%);
+        background: linear-gradient(to top left, transparent calc(50% - 2px), #e53935 calc(50% - 2px), #e53935 calc(50% + 2px), transparent calc(50% + 2px));
+        opacity: 0; transition: opacity 0.5s; pointer-events: none;
+    }
+    .hi-dot.cut::after { opacity: 1; }
+    /* x の表す数（小数）：0.8 の「0.」に ななめ線 */
+    .hi-zc { position: relative; display: inline-block; }
+    .hi-zc::after {
+        content: ''; position: absolute; inset: 12% 0 8% 0; pointer-events: none;
+        background: linear-gradient(to top right, transparent calc(50% - 2px), #e53935 calc(50% - 2px), #e53935 calc(50% + 2px), transparent calc(50% + 2px));
+        opacity: 0; transition: opacity 0.5s;
+    }
+    .hi-zc.cut::after { opacity: 1; }
+    /* 比の値（整数）：約分の ○・ななめ線・小さい数 */
+    .hi-atai { padding: 22px 0; }
+    .hi-frac2 { display: inline-flex; align-items: center; gap: 10px; }
+    #hi-panel .ans-frame.hi-circfr { border-radius: 50%; min-width: 50px; height: 50px; padding: 0; }
+    #hi-panel .hi-circfr .ten-box { width: 22px; height: 42px; font-size: 1.6rem; }
+    #hi-panel .ans-frame.hi-circfr.filled { border-color: #e53935; }
+    .hi-cutwrap { position: relative; display: inline-flex; }
+    .hi-cutlab { position: absolute; left: 50%; transform: translateX(-50%); color: #e53935; font-size: 1.4rem; line-height: 1; }
+    .hi-cutlab.top { bottom: 100%; margin-bottom: 3px; }
+    .hi-cutlab.bot { top: 100%; margin-top: 3px; }
+    #hi-panel .ans-frame.hi-cut { position: relative; }
+    .hi-cut::after {
+        content: ''; position: absolute; inset: -3px; pointer-events: none;
+        background: linear-gradient(to top right, transparent calc(50% - 1.5px), #e53935 calc(50% - 1.5px), #e53935 calc(50% + 1.5px), transparent calc(50% + 1.5px));
+    }
+
+    /* 比を簡単に（整数）：○・クリックする 数・下の □ */
+    .hi-kan { display: grid; grid-template-rows: 58px auto 54px; align-items: center; justify-items: center; column-gap: 12px; font-size: 2.5rem; }
+    .hi-kan .kn-n, .hi-kan .kn-c, .hi-kan .kn-s { display: flex; align-items: center; justify-content: center; }
+    .hi-tap { position: relative; cursor: pointer; padding: 0 4px; border-radius: 8px; border-bottom: 3px solid transparent; transition: background 0.2s, border-color 0.2s; }
+    .hi-tap.tapnow { border-bottom: 3px dashed #ff9800; }
+    .hi-tap.tapnow:hover { background: rgba(255, 152, 0, 0.12); }
+    #hi-panel .hi-kan .kn-s .ans-frame { height: 46px; }
+    #hi-panel .hi-kan .kn-s .ten-box { width: 26px; height: 42px; font-size: 1.8rem; }
+    /* 比を簡単に（小数）：上の（10倍）ボタン・整数に つく 赤い 0 */
+    .hi-kan.hi-kan10 { grid-template-rows: auto 58px auto 54px; }
+    .hi-kan .kn-t { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+    button.hi-ten { font-size: 1.3rem; padding: 4px 16px; color: #e65100; background: #fff3e0; border: 3px solid #ffcc80; border-radius: 12px; box-shadow: 0 3px 0 #ffcc80; }
+    button.hi-ten.now { border-color: #ff9800; background: #ffe0b2; }
+    button.hi-ten.done { opacity: 0.5; pointer-events: none; }
+    .hi-z { display: none; color: #e53935; }
+    .hi-z.on { display: inline; }
+    /* 比を簡単に（分数）：ヒントの ななめの やじるし */
+    .hi-crs { position: relative; display: inline-flex; align-items: center; }
+    .hi-crs-svg { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+    .hi-kan.hi-kanfr { font-size: 2.1rem; column-gap: 4px; }
+    #hi-panel .hi-kanfr .ans-frame { height: 50px; padding: 0 4px; }
+    #hi-panel .hi-kanfr .ten-box { width: 24px; height: 46px; font-size: 1.8rem; }
+    #hi-panel .hi-kanfr .ans-frame.hi-circfr { min-width: 46px; height: 46px; }
+    @media (min-width: 601px) and (max-width: 900px) {
+        .hi-kan.hi-kanfr { font-size: 1.5rem; column-gap: 0; grid-template-rows: 50px auto 46px; }
+        #hi-panel .hi-kanfr .ans-frame { height: 40px; padding: 0 3px; }
+        #hi-panel .hi-kanfr .ten-box { width: 16px; height: 36px; font-size: 1.35rem; }
+        #hi-panel .hi-kanfr .ans-frame.hi-circfr { min-width: 40px; height: 40px; }
+        .hi-kanfr .hi-crs > span[style] { margin: 0 14px !important; }
+    }
+    @media (max-width: 600px) {
+        .hi-kan.hi-kanfr { font-size: 1.4rem; column-gap: 3px; grid-template-rows: 44px auto 40px; }
+        #hi-panel .hi-kanfr .ans-frame { height: 36px; padding: 0 2px; border-width: 2px; }
+        #hi-panel .hi-kanfr .ten-box { width: 15px; height: 32px; font-size: 1.2rem; }
+        #hi-panel .hi-kanfr .ans-frame.hi-circfr { min-width: 36px; height: 36px; }
+        .hi-kanfr .hi-crs > span[style] { margin: 0 12px !important; }
+    }
+
+    /* 比の式 a：b ＝ c：d と、上下の やじるし */
+    .hi-eq {
+        display: grid;
+        grid-template-columns: 100px 34px 100px 46px 100px 34px 100px;
+        grid-template-rows: 46px auto 46px;
+        align-items: center;
+        font-size: 2.5rem;
+    }
+    .hi-eq .n { grid-row: 2; display: flex; justify-content: center; align-items: center; }
+    .hi-arc { position: relative; height: 100%; margin: 0 50px; }
+    .hi-arc.top { grid-row: 1; grid-column: 1 / 6; }
+    .hi-arc.bot { grid-row: 3; grid-column: 3 / 8; }
+    .hi-arc::before { content: ''; position: absolute; left: 0; right: 0; height: 20px; border: 3px solid #e53935; }
+    .hi-arc.top::before { bottom: 2px; border-bottom: none; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+    .hi-arc.bot::before { top: 2px; border-top: none; border-radius: 0 0 50% 50% / 0 0 100% 100%; }
+    .hi-arc::after { position: absolute; right: -7px; color: #e53935; font-size: 14px; line-height: 1; }
+    .hi-arc.top::after { content: '▼'; bottom: -6px; }
+    .hi-arc.bot::after { content: '▲'; top: -6px; }
+    .hi-arc .lbl {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 3px;
+        font-size: 1.5rem; color: #e53935; white-space: nowrap;
+        background: rgba(255,255,255,0.9); border-radius: 8px; padding: 0 4px;
+    }
+    .hi-arc.top .lbl { top: -4px; }
+    .hi-arc.bot .lbl { bottom: -4px; }
+
+    /* ㋐〜㋓ を えらぶ */
+    .hi-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; background: #fff8d6; border: 3px solid #f5d76e; border-radius: 16px; padding: 14px 18px; }
+    button.hi-choice {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        font-size: 2rem; color: #333; background: #fff;
+        border: 3px solid #ddd; border-radius: 12px; padding: 8px 16px; box-shadow: 0 3px 0 #ccc;
+    }
+    button.hi-choice .kana { color: #e65100; font-size: 1.6rem; }
+    button.hi-choice.picked { border-color: #e53935; background: #ffebee; box-shadow: 0 3px 0 #e57373; }
+
+    /* テープ図 */
+    .hi-tape { display: flex; width: 470px; font-size: 1rem; }
+    .hi-tape-wrap { display: flex; flex-direction: column; width: 470px; font-size: 1rem; }
+    .tp-g { display: flex; flex-direction: column; min-width: 0; }
+    .tp-lab { text-align: center; min-height: 1.5em; line-height: 1.4; }
+    .tp-brk { height: 8px; margin: 0 4px; border: 2px dashed #999; border-bottom: none; border-radius: 10px 10px 0 0; }
+    .tp-brk.dn { border-top: none; border-bottom: 2px dashed #999; border-radius: 0 0 10px 10px; }
+    .tp-bar { display: flex; height: 16px; }
+    .tp-bar i { flex: 1; background: #f8bbd0; border: 2px solid #d81b60; border-left-width: 0; }
+    .tp-g:first-child .tp-bar i:first-child { border-left-width: 2px; }
+
+    /* 等しい比を作る（hito3）・比の意味（imi1）の ボタン */
+    .hi-fbtns { display: flex; gap: 16px; justify-content: center; }
+    button.hi-fbtn { font-size: 1.2rem; padding: 6px 22px; }
+    button.hi-fbtn.ok { color: #e65100; background: #fff3e0; border: 3px solid #ffb74d; box-shadow: 0 3px 0 #ffb74d; }
+    button.hi-fbtn.done { opacity: 0.5; pointer-events: none; }
+    .hi-frow { gap: 8px; }
+    /* 比の意味（imi1）：コップと ジュース */
+    .mx-wrap { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+    .mx-side { display: flex; flex-direction: column; align-items: center; gap: 5px; background: #fff; border: 3px solid #ffe0b2; border-radius: 16px; padding: 6px 10px; }
+    .mx-title { font-size: 1.2rem; color: #e65100; }
+    .mx-glass { width: 76px; height: 100px; border: 4px solid #90a4ae; border-top: none; border-radius: 0 0 16px 16px; position: relative; background: rgba(255,255,255,0.7); overflow: hidden; }
+    .mx-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; transition: height 0.4s, background 0.4s; }
+    .mx-row { display: flex; align-items: center; gap: 4px; font-size: 1.1rem; }
+    .mx-lab { width: 2.2em; }
+    .mx-cups { display: flex; flex-wrap: wrap; gap: 2px; width: 91px; min-height: 15px; align-content: center; }
+    .mx-cups i { display: block; width: 11px; height: 15px; border-radius: 0 0 4px 4px; }
+    .mx-cups i.j { background: #ef6c00; }
+    .mx-cups i.w { background: #64b5f6; }
+    .mx-num { min-width: 1.4em; text-align: right; font-size: 1.3rem; }
+    button.mx-btn { font-size: 1.3rem; padding: 2px 11px; border-radius: 10px; }
+    button.mx-btn.off { visibility: hidden; }
+    .mx-ratio { font-size: 1.8rem; }
+
+    /* iPad 縦など（601〜900px）：板を少しせまく */
+    @media (min-width: 601px) and (max-width: 900px) {
+        #hi-panel { min-width: 0; padding: 10px 12px; }
+        .hi-q, .hi-work { max-width: 390px; }
+        .hi-tape, .hi-tape-wrap { width: 380px; }
+        .hi-big { font-size: 2.1rem; }
+        .hi-eq { grid-template-columns: 76px 24px 76px 32px 76px 24px 76px; font-size: 2rem; }
+        .hi-arc { margin: 0 38px; }
+        button.hi-choice { font-size: 1.6rem; padding: 8px 10px; }
+        .hi-choices { gap: 10px; padding: 10px; }
+    }
+    @media (max-width: 600px) {
+        #hi-panel { min-width: 0; width: 100%; min-height: 0; padding: 12px 6px; }
+        .hi-q { font-size: 1rem; }
+        .hi-big { font-size: 1.8rem; }
+        .hi-line { font-size: 1.1rem; }
+        .hi-eq { grid-template-columns: 62px 20px 62px 26px 62px 20px 62px; font-size: 1.7rem; }
+        .hi-arc { margin: 0 31px; }
+        .hi-arc .lbl { font-size: 1.15rem; }
+        #hi-panel .ans-frame { height: 50px; min-width: 56px; }
+        #hi-panel .ten-box { width: 24px; height: 46px; font-size: 1.7rem; }
+        button.hi-choice { font-size: 1.3rem; padding: 6px 8px; gap: 6px; }
+        .hi-choices { gap: 8px; padding: 8px; }
+        .hi-tape, .hi-tape-wrap { width: 300px; }
+        .mx-wrap { gap: 8px; }
+        .mx-glass { height: 80px; }
+    }
+</style>
+</head>
+<body>
+
+<div id="app-container">
+    <div style="display: flex; justify-content: flex-start; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: -10px; z-index: 10;">
+        <div style="font-weight: bold; color: #ff5722; font-size: 1.2rem; background: rgba(255,255,255,0.9); padding: 5px 15px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            🔥 連続正解: <span id="combo-count">0</span>
+        </div>
+        <button id="btn-challenge" class="chal-btn">🏁 10問チャレンジ</button>
+        <div id="chal-bar"><span id="chal-dots"></span><span id="chal-count"></span></div>
+        <!-- ここ（chal-bar のうしろ）に「📝 テストの 練習」のボタンが自動で入る -->
+    </div>
+
+    <!-- 上のタブ。data-group は下の小タブの入れもの（GROUP_SUB）の名前 -->
+    <div class="settings" id="mode-tabs">
+        <button class="tab-btn" data-group="imi">比の意味</button>
+        <button class="tab-btn active" data-group="hyou">比で表す</button>
+        <button class="tab-btn" data-group="atai">比の値</button>
+        <button class="tab-btn" data-group="hito">等しい比</button>
+        <button class="tab-btn" data-group="kan">比を簡単に</button>
+        <button class="tab-btn" data-group="xmo">xの表す数</button>
+        <button class="tab-btn kake-tab" data-group="bun">比の文章題</button>
+    </div>
+
+    <!-- 小タブ。data-mode が「モードの名前」（問題・手順・テストの練習は、この名前で見分ける） -->
+    <div id="imi-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="imi1">同じ味を作る</button>
+    </div>
+    <div id="hyou-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="hyou1">割合を比で表す</button>
+    </div>
+    <div id="atai-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="atai1">整数の比</button>
+        <button class="level-btn" data-mode="atai2">小数の比</button>
+    </div>
+    <div id="hito-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="hito1">等しい比を見つける</button>
+        <button class="level-btn" data-mode="hito2">□にあてはまる数</button>
+        <button class="level-btn" data-mode="hito3">等しい比を作る</button>
+    </div>
+    <div id="kan-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="kan1">整数</button>
+        <button class="level-btn" data-mode="kan2">小数</button>
+        <button class="level-btn" data-mode="kan3">分数</button>
+        <button class="level-btn random-btn" data-mode="kan4">ランダム</button>
+    </div>
+    <div id="xmo-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="xmo1">整数</button>
+        <button class="level-btn" data-mode="xmo2">小数が入る</button>
+    </div>
+    <div id="bun-sub" class="level-wrap">
+        <button class="level-btn active" data-mode="bun1">一方の量を求める</button>
+        <button class="level-btn" data-mode="bun2">全体を部分に分ける</button>
+    </div>
+
+    <div id="instruction" class="header">読み込み中...</div>
+
+    <div class="main-content">
+        <div class="grid-wrapper">
+            <div class="grid">
+                <!-- Row 0 (商) -->
+                <div class="cell" id="cell-r0-c0"></div>
+                <div class="cell" id="cell-r0-c1"></div>
+                <div class="cell" id="cell-r0-c2"></div>
+                <div class="cell" id="cell-r0-c3"></div>
+                <div class="cell" id="cell-r0-c4"></div>
+                <div class="cell" id="cell-r0-c5"></div>
+                <div class="cell" id="cell-r0-c6"></div>
+                <div class="cell" id="cell-r0-c7"></div>
+                <div class="cell" id="cell-r0-c8"></div>
+                <div class="cell" id="cell-r0-c9"></div>
+                <!-- Row 1 (問題：わる数 ） わられる数) -->
+                <div class="cell" id="cell-r1-c0"></div>
+                <div class="cell" id="cell-r1-c1"></div>
+                <div class="cell" id="cell-r1-c2"></div>
+                <div class="cell" id="cell-r1-c3"></div>
+                <div class="cell" id="cell-r1-c4"></div>
+                <div class="cell" id="cell-r1-c5"></div>
+                <div class="cell" id="cell-r1-c6"></div>
+                <div class="cell" id="cell-r1-c7"></div>
+                <div class="cell" id="cell-r1-c8"></div>
+                <div class="cell" id="cell-r1-c9"></div>
+                <!-- Row 2 (積1) -->
+                <div class="cell" id="cell-r2-c0"></div>
+                <div class="cell" id="cell-r2-c1"></div>
+                <div class="cell" id="cell-r2-c2"></div>
+                <div class="cell" id="cell-r2-c3"></div>
+                <div class="cell" id="cell-r2-c4"></div>
+                <div class="cell" id="cell-r2-c5"></div>
+                <div class="cell" id="cell-r2-c6"></div>
+                <div class="cell" id="cell-r2-c7"></div>
+                <div class="cell" id="cell-r2-c8"></div>
+                <div class="cell" id="cell-r2-c9"></div>
+                <!-- Row 3 (差1・おろした数) -->
+                <div class="cell" id="cell-r3-c0"></div>
+                <div class="cell" id="cell-r3-c1"></div>
+                <div class="cell" id="cell-r3-c2"></div>
+                <div class="cell" id="cell-r3-c3"></div>
+                <div class="cell" id="cell-r3-c4"></div>
+                <div class="cell" id="cell-r3-c5"></div>
+                <div class="cell" id="cell-r3-c6"></div>
+                <div class="cell" id="cell-r3-c7"></div>
+                <div class="cell" id="cell-r3-c8"></div>
+                <div class="cell" id="cell-r3-c9"></div>
+                <!-- Row 4 (積2) -->
+                <div class="cell" id="cell-r4-c0"></div>
+                <div class="cell" id="cell-r4-c1"></div>
+                <div class="cell" id="cell-r4-c2"></div>
+                <div class="cell" id="cell-r4-c3"></div>
+                <div class="cell" id="cell-r4-c4"></div>
+                <div class="cell" id="cell-r4-c5"></div>
+                <div class="cell" id="cell-r4-c6"></div>
+                <div class="cell" id="cell-r4-c7"></div>
+                <div class="cell" id="cell-r4-c8"></div>
+                <div class="cell" id="cell-r4-c9"></div>
+                <!-- Row 5 (差2・おろした数) -->
+                <div class="cell" id="cell-r5-c0"></div>
+                <div class="cell" id="cell-r5-c1"></div>
+                <div class="cell" id="cell-r5-c2"></div>
+                <div class="cell" id="cell-r5-c3"></div>
+                <div class="cell" id="cell-r5-c4"></div>
+                <div class="cell" id="cell-r5-c5"></div>
+                <div class="cell" id="cell-r5-c6"></div>
+                <div class="cell" id="cell-r5-c7"></div>
+                <div class="cell" id="cell-r5-c8"></div>
+                <div class="cell" id="cell-r5-c9"></div>
+                <!-- Row 6 (積3) -->
+                <div class="cell" id="cell-r6-c0"></div>
+                <div class="cell" id="cell-r6-c1"></div>
+                <div class="cell" id="cell-r6-c2"></div>
+                <div class="cell" id="cell-r6-c3"></div>
+                <div class="cell" id="cell-r6-c4"></div>
+                <div class="cell" id="cell-r6-c5"></div>
+                <div class="cell" id="cell-r6-c6"></div>
+                <div class="cell" id="cell-r6-c7"></div>
+                <div class="cell" id="cell-r6-c8"></div>
+                <div class="cell" id="cell-r6-c9"></div>
+                <!-- Row 7 (あまり) -->
+                <div class="cell" id="cell-r7-c0"></div>
+                <div class="cell" id="cell-r7-c1"></div>
+                <div class="cell" id="cell-r7-c2"></div>
+                <div class="cell" id="cell-r7-c3"></div>
+                <div class="cell" id="cell-r7-c4"></div>
+                <div class="cell" id="cell-r7-c5"></div>
+                <div class="cell" id="cell-r7-c6"></div>
+                <div class="cell" id="cell-r7-c7"></div>
+                <div class="cell" id="cell-r7-c8"></div>
+                <div class="cell" id="cell-r7-c9"></div>
+            </div>
+            <!-- 計算タブの板（マスの代わりに出す）：式 ＝ ▢ -->
+            <div id="kei-panel">
+                <div id="kei-shiki">
+                    <span id="kei-q"></span>
+                    <span>＝</span>
+                    <div class="ten-boxes ans-frame" id="kei-g0"></div>
+                </div>
+            </div>
+            <!-- 比のタブの板（問題ごとに中身を作る） -->
+            <div id="hi-panel"></div>
+        </div>
+
+        <div class="controls">
+            <button id="btn-tateru" class="action-btn">たてる</button>
+            <button id="btn-kakeru" class="action-btn">かける</button>
+            <button id="btn-hiku" class="action-btn">ひく</button>
+            <button id="btn-orosu" class="action-btn">おろす</button>
+            <div class="hint-row">
+                <button id="btn-hint" class="hint-btn">ヒント</button>
+            </div>
+            <button id="btn-reset" class="reset-btn">次へ</button>
+        </div>
+
+        <div style="position: relative;">
+            <div id="numpad" class="numpad">
+                <button class="num-btn" data-val="1">1</button>
+                <button class="num-btn" data-val="2">2</button>
+                <button class="num-btn" data-val="3">3</button>
+                <button class="num-btn" data-val="4">4</button>
+                <button class="num-btn" data-val="5">5</button>
+                <button class="num-btn" data-val="6">6</button>
+                <button class="num-btn" data-val="7">7</button>
+                <button class="num-btn" data-val="8">8</button>
+                <button class="num-btn" data-val="9">9</button>
+                <div style="visibility: hidden;"></div>
+                <button class="num-btn" data-val="0">0</button>
+                <button class="num-btn dot-btn" data-val=".">.</button>
+            </div>
+            <div id="op-pad" class="op-pad">
+                <button class="num-btn op-btn" data-val="×">×</button>
+                <button class="num-btn op-btn" data-val="÷">÷</button>
+                <button class="num-btn op-btn" data-val="＋">＋</button>
+                <button class="num-btn op-btn" data-val="−">−</button>
+            </div>
+            <div id="hanamaru"></div>
+        </div>
+    </div>
+</div>
+
+<div id="popup">ちがうよ！</div>
+
+<!-- 10問チャレンジの成せき表 -->
+<div id="chal-result">
+    <div class="chal-card">
+        <div class="chal-title">🏁 10問 できました！</div>
+        <div class="chal-lines" id="chal-lines"></div>
+        <div class="chal-btns">
+            <button id="btn-chal-again" class="reset-btn">もう一度チャレンジ</button>
+            <button id="btn-chal-quit" class="hint-btn">やめる</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =====================================================================
+// ▼ ここから下が「アプリごとに書きかえる」ところ ▼
+// =====================================================================
+
+// はじめに開くモード（小タブの data-mode）
+let currentMode = 'hyou1';
+
+// 上のタブ（data-group）と、その下に出す小タブの入れもの（id）
+const GROUP_SUB = { imi: 'imi-sub', hyou: 'hyou-sub', atai: 'atai-sub', hito: 'hito-sub', kan: 'kan-sub', xmo: 'xmo-sub', bun: 'bun-sub' };
+
+// 小タブを開いたときの「最初の1問」（見本問題）。テストの問題と同じ数にしてある
+const TAB_PROBLEM = {
+    'hyou1': { t: 0, a: 4, b: 9, rev: false },                          // 縦4cm 横9cm → 4：9
+    'atai1': { a: 24, b: 30 },                                           // 24：30 → 4/5
+    'atai2': { A: 14, B: 6 },                                            // 1.4：0.6 → 7/3（10倍した数で書く）
+    'hito1': { A: 5, B: 2, opts: [[2, 5], [15, 6], [50, 20], [10, 7]] }, // 5：2 → ㋑と㋒
+    'hito2': { a: 3, b: 5, op: '×', k: 2 },                              // 3：5 ＝ 6：□
+    'hito3': { A: 3, B: 5 },                                             // 3：5 と 等しい 比を 2つ 作る
+    'imi1':  { P: 3, Q: 2, k1: 2, k2: 3 },                               // 見本 3：2 → もと6 水？ → 水6 もと？
+    'kan1':  { A: 54, B: 45 },                                           // 54：45 → 6：5
+    'kan2':  { A: 42, B: 12 },                                           // 4.2：1.2 → 7：2（10倍した数で書く）
+    'kan3':  { n1: 3, d1: 4, n2: 5, d2: 6 },                             // 3/4：5/6 → 9：10
+    'xmo1':  { v: [12, 8, 0, 2], xi: 2 },                                // 12：8 ＝ x：2（xi は xの場所 2か3）
+    'xmo2':  { v: [5, 0.8, 0, 4], xi: 2 },                               // 5：0.8 ＝ x：4
+    'bun1':  { t: 0, p: 7, q: 3, gi: 2, k: 50 },                         // クッキー バター150g → 小麦粉350g
+    'bun2':  { t: 0, p: 8, q: 7, k: 3 }                                  // あめ45個 8：7 → 24個
+};
+
+// --- 比で表す（hyou1）の問題文。lo〜hi の数で作る（rev のときは 順番を 逆に きく） ---
+const HYOU_T = [
+    { q: (a, b) => `縦 ${a}cm、横 ${b}cm の 写真が あります。`, ask: '縦と 横の 長さの 割合', askR: '横と 縦の 長さの 割合', lo: 2, hi: 20 },
+    { q: (a, b) => `水が ${a}L、油が ${b}L あります。`, ask: '水と 油の 量の 割合', askR: '油と 水の 量の 割合', lo: 2, hi: 30 },
+    { q: (a, b) => `赤の 色紙が ${a}枚、青の 色紙が ${b}枚 あります。`, ask: '赤の 色紙と 青の 色紙の 枚数の 割合', askR: '青の 色紙と 赤の 色紙の 枚数の 割合', lo: 2, hi: 30 },
+    { q: (a, b) => `クラスに 男子が ${a}人、女子が ${b}人 います。`, ask: '男子と 女子の 人数の 割合', askR: '女子と 男子の 人数の 割合', lo: 10, hi: 20 },
+    { q: (a, b) => `さとうが ${a}g、塩が ${b}g あります。`, ask: 'さとうと 塩の 重さの 割合', askR: '塩と さとうの 重さの 割合', lo: 2, hi: 30 }
+];
+
+// --- 文章題：一方の量を求める（bun1）。k は「1つ分」の [最小, 最大, きざみ] ---
+const BUN1_T = [
+    { s: (p, q) => `クッキーを 作るのに、小麦粉と バターの 重さの 比が ${p}：${q} に なるように まぜます。`,
+      n: ['小麦粉', 'バター'], u: 'g', k: [1, 6, 10],
+      ask: (gi, X) => gi === 1 ? `小麦粉を ${X}g 使うとき、バターは 何g 必要ですか。` : `バターを ${X}g 使うとき、小麦粉は 何g 必要ですか。` },
+    { s: (p, q) => `縦と 横の 長さの 比が ${p}：${q} の、長方形の ポスターを 作ります。`,
+      n: ['縦', '横'], u: 'cm', k: [3, 15, 1],
+      ask: (gi, X) => gi === 1 ? `縦の 長さを ${X}cm に するとき、横の 長さは 何cm に なりますか。` : `横の 長さを ${X}cm に するとき、縦の 長さは 何cm に なりますか。` },
+    { s: (p, q) => `牛にゅうと コーヒーの 量の 比が ${p}：${q} に なるように、コーヒー牛にゅうを 作ります。`,
+      n: ['牛にゅう', 'コーヒー'], u: 'mL', k: [1, 4, 10],
+      ask: (gi, X) => gi === 1 ? `牛にゅうを ${X}mL 使うとき、コーヒーは 何mL 必要ですか。` : `コーヒーを ${X}mL 使うとき、牛にゅうは 何mL 必要ですか。` },
+    { s: (p, q) => `兄と 弟の 持っている お金の 比は ${p}：${q} です。`,
+      n: ['兄', '弟'], u: '円', k: [2, 15, 10],
+      ask: (gi, X) => gi === 1 ? `兄が ${X}円 持っているとき、弟は 何円 持っていますか。` : `弟が ${X}円 持っているとき、兄は 何円 持っていますか。` }
+];
+
+// --- 文章題：全体を部分に分ける（bun2）。答えは いつも 前の人（n[0]）の 分 ---
+const BUN2_T = [
+    { s: (T, p, q) => `${T}個の あめを、れんさんと 弟の あめの 個数の 比が ${p}：${q} に なるように 分けます。<br>れんさんの あめの 個数は 何個に なりますか。`,
+      n: ['れんさん', '弟'], whole: 'あめ全体', thing: 'あめの 個数', u: '個', k: [2, 6, 1] },
+    { s: (T, p, q) => `${T}枚の 色紙を、姉と 妹の 枚数の 比が ${p}：${q} に なるように 分けます。<br>姉の 色紙は 何枚に なりますか。`,
+      n: ['姉', '妹'], whole: '色紙全体', thing: '色紙の 枚数', u: '枚', k: [2, 8, 1] },
+    { s: (T, p, q) => `長さ ${T}cm の リボンを、赤と 白の 長さの 比が ${p}：${q} に なるように 切ります。<br>赤の リボンは 何cm に なりますか。`,
+      n: ['赤', '白'], whole: 'リボン全体', thing: 'リボンの 長さ', u: 'cm', k: [3, 10, 1] },
+    { s: (T, p, q) => `${T}円を、兄と 弟で 金がくの 比が ${p}：${q} に なるように 分けます。<br>兄の 金がくは 何円に なりますか。`,
+      n: ['兄', '弟'], whole: 'お金全体', thing: '金がく', u: '円', k: [1, 10, 100] }
+];
+
+// --- 計算タブ（式 ＝ ▢）の問題の作り方 ---
+//   モードごとに「記号」と「[a, b] を作る関数」を書く。答えは記号から自動で計算する
+const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));   // lo〜hi の整数
+const KEI_OP = { kei1: '＋', kei2: '−', kei3: '×', kei4: '÷' };
+const KEI_GEN = {
+    kei1: () => { const a = rnd(100, 899); return [a, rnd(100, 999 - a)]; },          // 3けた＋3けた（答えは999まで）
+    kei2: () => { const a = rnd(200, 999); return [a, rnd(100, a - 1)]; },            // 3けた−3けた
+    kei3: () => [rnd(12, 99), rnd(2, 9)],                                             // 2けた×1けた
+    kei4: () => { const b = rnd(2, 9); return [b * rnd(10, Math.floor(99 / b)), b]; } // 2けた÷1けた（わりきれる・商2けた）
+};
+const KEI_RANDOM = ['kei1', 'kei2', 'kei3', 'kei4'];   // 「ランダム」（kei5）でまぜるモード
+const KEI_CALC = { '＋': (a, b) => a + b, '−': (a, b) => a - b, '×': (a, b) => a * b, '÷': (a, b) => a / b };
+
+// ×÷＋− のキーを出すモード（式を入れるタブを作ったときに書く）
+const OP_PAD_MODES = [];
+// テンキーの「.」を出すモード（小数をあつかうタブを作ったときに書く）
+const DOT_MODES = [];
+
+// =====================================================================
+// ▲ 書きかえるのはここまで（テストの練習の設定は、下の ①せってい）▲
+// =====================================================================
+
+// --- 問題と状態 ---
+let divisor, dividend, q1, q2, q3, q, sub1, sub2, sub3;   // わり算の筆算の数
+let keiLay = null;        // 計算タブの1問ぶん（a, op, b, ansStr）
+let keiLast = '';         // 同じ問題を2回続けて出さないための記録
+let forceProblem = null;  // [a, b] 次の1問を固定する（見本問題）
+const isKei = m => /^kei\d+$/.test(m);
+
+let state = 0;            // いま何番めの手順か（states[state]）
+let selectedCells = [];
+let states = [];          // 1問ぶんの手順の一覧
+let mode = '2digit';
+
+let comboCount = 0;
+let startTime = 0;
+let errorStats = { tateru: 0, kakeru: 0, hiku: 0, orosu: 0, other: 0 };
+
+// =====================================================================
+// 手順の一覧を作る
+//   type：action（たてる〜おろすのボタン）／click_cell（マスを1つ）／click_cells（マスをいくつか）／
+//         click_cells_group（数のかたまり）／input（テンキー）／drag_drop（おろす）／finish（おわり）
+// =====================================================================
+function generateStates() {
+    // 比のタブ：slots の 順に、テンキーで1文字ずつ（または ㋐〜㋓ を タップ）
+    if (isHi(mode)) {
+        if (hiLay.makeStates) {          // 手順を 自分で 作る 問題（比の値の 整数）
+            states = hiLay.makeStates();
+            states.forEach((st, i) => { st.id = i; });
+            return;
+        }
+        states = [];
+        (hiLay.pre || []).forEach(p => states.push(Object.assign({}, p)));   // slots の 前の 手順（xmo2 の（10倍））
+        hiLay.slots.forEach((sl, si) => {
+            if (sl.kind === 'choose') { states.push({ text: sl.text, type: 'choose', expect: sl.expect, slot: si }); return; }
+            sl.ans.split('').forEach((ch, i) => states.push({
+                text: (i === 0) ? sl.text : 'つづきを 入れよう。',
+                type: 'input',
+                targetCell: `${sl.id}_${i}`,
+                expect: ((c) => () => Number(c))(ch),
+                slot: si, digit: i
+            }));
+        });
+        states.push({ text: 'できました！', type: 'finish' });
+        states.forEach((st, i) => { st.id = i; });
+        return;
+    }
+    // 計算タブ：答えを左から1文字ずつテンキーで入れる
+    if (isKei(mode)) {
+        const L = keiLay;
+        states = [];
+        L.ansStr.split('').forEach((ch, i) => {
+            states.push({
+                text: (i === 0) ? "答えを、テンキーで入れよう。" : "つづきを入れよう。",
+                type: "input",
+                targetCell: `ans${i}`,
+                expect: ((c) => () => Number(c))(ch)
+            });
+        });
+        states.push({ text: "できました！", type: "finish" });
+        states.forEach((st, i) => { st.id = i; });
+        return;
+    }
+    if (mode === '2digit') {
+        states = [
+            { id: 0, text: "はじめに何をしますか。", type: "action", expect: "tateru" },
+            { id: 1, text: "商はAにたちますか、Bにたちますか。", type: "click_cell", expect: "r0-c3" },
+            { id: 2, text: "何をたてますか。", type: "input", expect: () => q1, targetCell: "r0-c3" },
+            { id: 3, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+            { id: 4, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c3"] },
+            { id: 5, text: "次に何をしますか。", type: "action", expect: "hiku" },
+            { id: 6, text: "何から何をひきますか。", type: "click_cells", expect: ["r1-c3", "r2-c3"] },
+            { id: 7, text: "次に何をしますか。", type: "action", expect: "orosu" },
+            { id: 8, text: "どこに何をおろしますか。", type: "drag_drop", source: "r1-c4", target: "r3-c4" },
+            { id: 9, text: "次に何をしますか。", type: "action", expect: "tateru" },
+            { id: 10, text: "何をたてますか。", type: "input", expect: () => q2, targetCell: "r0-c4" }
+        ];
+        if (q2 === 0) {
+            states.push({ id: 11, text: "答えは出ました！", type: "finish" });
+        } else {
+            states.push(
+                { id: 11, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+                { id: 12, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c4"] },
+                { id: 13, text: "次に何をしますか。", type: "action", expect: "hiku" },
+                { id: 14, text: "何から何をひきますか。", type: "click_cells_group", expectGroups: [ ["r3-c3", "r3-c4"], ["r4-c3", "r4-c4"] ] },
+                { id: 15, text: "答えは出ました！", type: "finish" }
+            );
+        }
+    } else if (mode === '3digit1') {
+        states = [
+            { id: 0, text: "はじめに何をしますか。", type: "action", expect: "tateru" },
+            { id: 1, text: "商はAにたちますか、Bにたちますか、Cにたちますか。", type: "click_cell", expect: "r0-c3" },
+            { id: 2, text: "何をたてますか。", type: "input", expect: () => q1, targetCell: "r0-c3" },
+            { id: 3, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+            { id: 4, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c3"] },
+            { id: 5, text: "次に何をしますか。", type: "action", expect: "hiku" },
+            { id: 6, text: "何から何をひきますか。", type: "click_cells", expect: ["r1-c3", "r2-c3"] },
+            { id: 7, text: "次に何をしますか。", type: "action", expect: "orosu" },
+            { id: 8, text: "どこに何をおろしますか。", type: "drag_drop", source: "r1-c4", target: "r3-c4" },
+            { id: 9, text: "次に何をしますか。", type: "action", expect: "tateru" },
+            { id: 10, text: "何をたてますか。", type: "input", expect: () => q2, targetCell: "r0-c4" },
+            { id: 11, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+            { id: 12, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c4"] },
+            { id: 13, text: "次に何をしますか。", type: "action", expect: "hiku" },
+            { id: 14, text: "何から何をひきますか。", type: "click_cells_group", expectGroups: [ ["r3-c3", "r3-c4"], ["r4-c3", "r4-c4"] ] },
+            { id: 15, text: "次に何をしますか。", type: "action", expect: "orosu" },
+            { id: 16, text: "どこに何をおろしますか。", type: "drag_drop", source: "r1-c5", target: "r5-c5" },
+            { id: 17, text: "次に何をしますか。", type: "action", expect: "tateru" },
+            { id: 18, text: "何をたてますか。", type: "input", expect: () => q3, targetCell: "r0-c5" }
+        ];
+        if (q3 === 0) {
+            states.push({ id: 19, text: "答えは出ました！", type: "finish" });
+        } else {
+            states.push(
+                { id: 19, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+                { id: 20, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c5"] },
+                { id: 21, text: "次に何をしますか。", type: "action", expect: "hiku" },
+                { id: 22, text: "何から何をひきますか。", type: "click_cells_group", expectGroups: [ ["r5-c4", "r5-c5"], ["r6-c4", "r6-c5"] ] },
+                { id: 23, text: "答えは出ました！", type: "finish" }
+            );
+        }
+    } else if (mode === '3digit2') {
+        states = [
+            { id: 0, text: "はじめに何をしますか。", type: "action", expect: "tateru" },
+            { id: 1, text: "商はAにたちますか、Bにたちますか、Cにたちますか。", type: "click_cell", expect: "r0-c4" },
+            { id: 2, text: "何をたてますか。", type: "input", expect: () => q1, targetCell: "r0-c4" },
+            { id: 3, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+            { id: 4, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c4"] },
+            { id: 5, text: "次に何をしますか。", type: "action", expect: "hiku" },
+            { id: 6, text: "何から何をひきますか。", type: "click_cells_group", expectGroups: [ ["r1-c3", "r1-c4"], ["r2-c3", "r2-c4"] ] },
+            { id: 7, text: "次に何をしますか。", type: "action", expect: "orosu" },
+            { id: 8, text: "どこに何をおろしますか。", type: "drag_drop", source: "r1-c5", target: "r3-c5" },
+            { id: 9, text: "次に何をしますか。", type: "action", expect: "tateru" },
+            { id: 10, text: "何をたてますか。", type: "input", expect: () => q2, targetCell: "r0-c5" }
+        ];
+        if (q2 === 0) {
+            states.push({ id: 11, text: "答えは出ました！", type: "finish" });
+        } else {
+            states.push(
+                { id: 11, text: "次に何をしますか。", type: "action", expect: "kakeru" },
+                { id: 12, text: "何と何をかけますか。", type: "click_cells", expect: ["r1-c2", "r0-c5"] },
+                { id: 13, text: "次に何をしますか。", type: "action", expect: "hiku" },
+                { id: 14, text: "何から何をひきますか。", type: "click_cells_group", expectGroups: [ ["r3-c4", "r3-c5"], ["r4-c4", "r4-c5"] ] },
+                { id: 15, text: "答えは出ました！", type: "finish" }
+            );
+        }
+    }
+}
+
+// =====================================================================
+// 問題を作る
+// =====================================================================
+function generateProblem() {
+    // --- 比のタブ ---
+    if (isHi(mode)) {
+        const key = (mode === 'kan4') ? pick(['kan1', 'kan2', 'kan3']) : mode;
+        let L = null;
+        if (forceProblem && HI_GEN[mode]) L = HI_GEN[mode](forceProblem);   // 見本問題（ランダムでは使わない）
+        else {
+            for (let t = 0; t < 20; t++) {                                  // 前と同じ問題は出さない
+                L = HI_GEN[key](null);
+                if (L.sig !== hiLast) break;
+            }
+        }
+        hiLast = L.sig;
+        hiLay = L;
+        return;
+    }
+    // --- 計算タブ ---
+    if (isKei(mode)) {
+        const key = (mode === 'kei5') ? KEI_RANDOM[Math.floor(Math.random() * KEI_RANDOM.length)] : mode;
+        let ab = null;
+        if (forceProblem && KEI_GEN[mode]) ab = forceProblem;          // 見本問題（ランダムでは使わない）
+        if (!ab) {
+            // 前と同じ問題は出さない（20回まで作りなおす）
+            for (let t = 0; t < 20; t++) {
+                ab = KEI_GEN[key]();
+                if (`${key}:${ab[0]}:${ab[1]}` !== keiLast) break;
+            }
+        }
+        keiLast = `${key}:${ab[0]}:${ab[1]}`;
+        const op = KEI_OP[key];
+        const ans = KEI_CALC[op](ab[0], ab[1]);
+        keiLay = { key: key, a: ab[0], b: ab[1], op: op, ans: ans, ansStr: String(ans) };
+        return;
+    }
+
+    // --- わり算の筆算（1けたでわる）---
+    divisor = Math.floor(Math.random() * 8) + 2; // 2~9
+
+    if (mode === '2digit') {
+        let maxQ = Math.floor(99 / divisor);
+        q = Math.floor(Math.random() * (maxQ - 10 + 1)) + 10; // 10 ~ maxQ (確実にあまらず、十の位に商が立つ)
+    } else if (mode === '3digit1') {
+        let minQ = 100;
+        let maxQ = Math.floor(999 / divisor);
+        q = Math.floor(Math.random() * (maxQ - minQ + 1)) + minQ;
+    } else if (mode === '3digit2') {
+        let minQ = Math.ceil(100 / divisor);
+        if (minQ < 10) minQ = 10;
+        let maxQ = 99;
+        q = Math.floor(Math.random() * (maxQ - minQ + 1)) + minQ;
+    }
+
+    dividend = divisor * q;
+
+    if (mode === '2digit') {
+        q1 = Math.floor(q / 10);
+        q2 = q % 10;
+        sub1 = q1 * divisor;
+        sub2 = q2 * divisor;
+    } else if (mode === '3digit1') {
+        q1 = Math.floor(q / 100);
+        q2 = Math.floor((q % 100) / 10);
+        q3 = q % 10;
+        sub1 = q1 * divisor;
+        sub2 = q2 * divisor;
+        sub3 = q3 * divisor;
+    } else if (mode === '3digit2') {
+        q1 = Math.floor(q / 10);
+        q2 = q % 10;
+        sub1 = q1 * divisor;
+        sub2 = q2 * divisor;
+    }
+}
+
+// --- Web Audio API ---
+let audioCtx;
+const correctAudio = new Audio('https://github.com/byakusen/gogelige.quiz/raw/refs/heads/main/quiz_seikai.mp3');
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    correctAudio.load();
+}
+document.addEventListener('pointerdown', initAudio, { once: true });
+
+function playSound(type) {
+    if (type === 'correct') {
+        correctAudio.currentTime = 0;
+        correctAudio.play().catch(e => console.error("Audio play error:", e));
+        return;
+    }
+
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'wrong') { // ブブー
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.setValueAtTime(130, now + 0.1);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else if (type === 'click') { // ピッ
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+}
+
+// おわったときに、指示の文のところに出す答え
+function answerText() {
+    if (isHi(mode)) return hiLay.ans;
+    if (isKei(mode)) return `${keiLay.a} ${keiLay.op} ${keiLay.b} ＝ ${keiLay.ansStr}`;
+    return `答え（ ${q} ）`;
+}
+
+// ===== 計算タブ =====
+// 数字1文字ぶんの箱（idは「cell-」で始めるので、テンキーの入力のしくみをそのまま使える）
+function tenBox(ch, n) {
+    const b = document.createElement('div');
+    b.className = 'ten-box';
+    b.id = 'cell-ans' + n;
+    return b;
+}
+
+// 式と、答えを入れる箱をならべる（1問ごとに1回だけ）
+function renderKeiBoxes() {
+    const L = keiLay;
+    document.getElementById('kei-q').innerText = `${L.a} ${L.op} ${L.b}`;
+    const host = document.getElementById('kei-g0');
+    host.innerHTML = '';
+    L.ansStr.split('').forEach((ch, i) => host.appendChild(tenBox(ch, i)));
+}
+
+// そのステートで画面に書きこむこと（入れた文字だけを▢の中に出す）
+function drawKei(s) {
+    const L = keiLay;
+    if (!L) return;
+    const done = (s.type === 'finish') ? L.ansStr.length : state;
+    const host = document.getElementById('kei-g0');
+    host.classList.toggle('active', done < L.ansStr.length);
+    host.classList.toggle('filled', done >= L.ansStr.length);
+    L.ansStr.split('').forEach((ch, i) => {
+        const el = document.getElementById('cell-ans' + i);
+        if (!el) return;
+        const shown = i < done;
+        el.style.display = shown ? '' : 'none';
+        el.innerHTML = shown ? `<span>${ch}</span>` : '';
+    });
+}
+
+// =====================================================================
+// ===== 比のタブ =====
+//   1問ぶん（hiLay）＝ { sig, html（板の中身）, slots（答えを入れる順）, ans（おわりの文） }
+//   slot：{ id, ans:'350', text } … テンキーで1文字ずつ入れる（▢の id は hf-◯◯）
+//         { id, kind:'choose', expect:['i','u'], text } … ㋐〜㋓をタップ
+//         reveal：その答えが入ったら出す要素の id（.hi-later）。おわると .hi-later は ぜんぶ出る
+// =====================================================================
+const HI_MODES = ['imi1', 'hyou1', 'atai1', 'atai2', 'hito1', 'hito2', 'hito3', 'kan1', 'kan2', 'kan3', 'kan4', 'xmo1', 'xmo2', 'bun1', 'bun2'];
+const isHi = m => HI_MODES.includes(m);
+let hiLay = null, hiLast = '', hiPicked = [];
+
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a; };
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const d10 = n => String(n / 10);                         // 14 → "1.4"
+const fmt = n => String(Math.round(n * 10) / 10);
+const F = id => `<span class="ten-boxes ans-frame" id="hf-${id}"></span>`;            // 答えの▢
+const FR = (n, d) => `<span class="hi-frac"><span>${n}</span><span class="bar"></span><span>${d}</span></span>`;
+const FRB = (n, d) => `<span class="hi-frac">${n}<span class="bar"></span>${d}</span>`; // 分子・分母が▢のとき
+const VAL = (x, y) => { const g = gcd(x, y); return (y / g === 1) ? String(x / g) : FR(x / g, y / g); };
+const XV = '<i class="hi-x">x</i>';
+const NS = (id, ans, text, reveal) => ({ id: id, ans: String(ans), text: text, reveal: reveal || [] });
+function coprimePair(lo, hi, lo2, hi2) {      // ちがう2つの数で、公約数が1だけのもの
+    if (lo2 === undefined) { lo2 = lo; hi2 = hi; }
+    for (;;) { const a = rnd(lo, hi), b = rnd(lo2, hi2); if (a !== b && gcd(a, b) === 1) return [a, b]; }
+}
+
+// 比の式 a：b ＝ c：d と、上（a→c）・下（b→d）の やじるし
+function eqHtml(v, top, bot) {
+    const arc = (o, pos) => `<div class="hi-arc ${pos}${o.later ? ' hi-later' : ''}"${o.id ? ` id="${o.id}"` : ''}><span class="lbl">${o.html}</span></div>`;
+    const cells = [v[0], '：', v[1], '＝', v[2], '：', v[3]].map((n, i) => `<div class="n" style="grid-column:${i + 1}">${n}</div>`).join('');
+    return `<div class="hi-eq">${arc(top, 'top')}${cells}${arc(bot, 'bot')}</div>`;
+}
+
+// x を求める：わかっている2つ（やじるし）から 何倍か を出して、x を出す
+function xLay(v, xi, disp) {      // disp：式に 出す 数の 表示（xmo2 の 10倍 用。なければ v）
+    const kn = (xi === 2) ? [1, 3] : [0, 2];      // やじるしで 何倍か わかる 2つ
+    const ot = (xi === 2) ? [0, 2] : [1, 3];      // x の ある 2つ
+    const t1 = Math.round(v[kn[0]] * 10), t2 = Math.round(v[kn[1]] * 10);
+    const mul = t2 >= t1, k = mul ? t2 / t1 : t1 / t2, op = mul ? '×' : '÷';
+    const xv = Math.round((mul ? v[ot[0]] * k : v[ot[0]] / k) * 10) / 10;
+    const show = v.map((n, i) => (i === xi) ? XV : (disp ? disp[i] : fmt(n)));
+    const known = { html: `${op}${F('k')}` };
+    const other = { html: `${op}${k}`, later: true, id: 'arcO' };
+    const nv = v.map((n, i) => (i === xi) ? xv : n);
+    return {
+        eq: eqHtml(show, (xi === 2) ? other : known, (xi === 2) ? known : other),
+        slots: [
+            NS('k', k, mul ? `${fmt(v[kn[0]])} を 何倍すると ${fmt(v[kn[1]])} に なりますか。`
+                           : `${fmt(v[kn[0]])} を 何で わると ${fmt(v[kn[1]])} に なりますか。`, ['arcO']),
+            NS('x', xv, 'x に あてはまる 数を 入れよう。')
+        ],
+        work: `${XV} ＝ ${fmt(v[ot[0]])} ${op} ${k} ＝ ${fmt(xv)}`,
+        xv: xv,
+        eqText: `${fmt(nv[0])}：${fmt(nv[1])} ＝ ${fmt(nv[2])}：${fmt(nv[3])}`
+    };
+}
+
+// 比を簡単に（整数）の 板と 手順
+//   ① ○に わる数（いちばん大きい 公約数）を 入れる
+//   ② 54 を クリック → ななめ線、下に □ → 54÷9 の 答えを 入れる
+//   ③ 45 も 同じ　　④ 右の 比に 答えを 入れる
+//   小数（kan2）は o を わたす：さいしょに（10倍）ボタン → 小数点に ななめ線。あとは 整数と 同じ
+//   o：{ sig, label（4.2：1.2）, showA, showB（上の 表示）, work, ans }
+//   分数（kan3）は o.pre（分数の 比）を わたす：さいしょに ななめに かけた 数（3/4：5/6 → 18：20）を 入れる。ヒントで ななめの やじるし
+function kanTapLay(A, B, o) {
+    const g = gcd(A, B), p = A / g, q = B / g;
+    const ten = !!(o && o.label);   // 小数：さいしょに（10倍）
+    const crs = !!(o && o.pre);     // 分数：さいしょに ななめに かけた 数（18：20）を 入れる
+    const r = ten ? 1 : 0;      // 小数は いちばん上に（10倍）の 行が ふえる
+    const c = crs ? 1 : 0;      // 分数は いちばん左に 分数の 比の 列が ふえる
+    const box = (id, str) => str.split('').map((c, i) => `<div class="ten-box" id="cell-${id}_${i}" style="display:none"></div>`).join('');
+    const frame = (fid, inner, cls) => `<span class="ten-boxes ans-frame${cls || ''}" id="${fid}">${inner}</span>`;
+    const makeStates = () => {
+        const st = [];
+        const dig = (str, step, id, text) => str.split('').forEach((ch, i) => st.push({
+            text: (i === 0) ? text : 'つづきを 入れよう。', type: 'input', targetCell: `${id}_${i}`,
+            expect: ((c) => () => Number(c))(ch), step: step }));
+        if (ten) st.push({ text: `${o.label} を 10倍して、整数の 比に しよう。（10倍）を おそう。`, type: 'tap', expect: 'ten', step: 'ten' });
+        if (crs) {
+            dig(String(A), 'fa', 'Kfa', '整数の 比に なおそう。「：」の 前の 数を 入れよう。');
+            dig(String(B), 'fb', 'Kfb', '「：」の うしろの 数を 入れよう。');
+        }
+        dig(String(g), 'circ', 'Kc', `${A} と ${B} を 同じ 数で わって 簡単に しよう。何で わりますか。○に 入れよう。`);
+        st.push({ text: `${A} を クリックしよう。`, type: 'tap', expect: 'a', step: 'tapA' });
+        dig(String(p), 'sa', 'Ka', `${A} を ${g} で わった 数を、下の □に 入れよう。`);
+        st.push({ text: `${B} を クリックしよう。`, type: 'tap', expect: 'b', step: 'tapB' });
+        dig(String(q), 'sb', 'Kb', `${B} を ${g} で わった 数を、下の □に 入れよう。`);
+        dig(String(p), 'p', 'Kp', '右の 比に 答えを 入れよう。「：」の 前の 数は？');
+        dig(String(q), 'q', 'Kq', '「：」の うしろの 数は？');
+        st.push({ text: 'できました！', type: 'finish' });
+        return st;
+    };
+    const draw = (s) => {
+        const fin = s.type === 'finish';
+        states.forEach((t, k) => {
+            if (t.type !== 'input') return;
+            const el = document.getElementById('cell-' + t.targetCell);
+            if (!el) return;
+            const on = k < state;
+            el.style.display = on ? '' : 'none';
+            el.innerHTML = on ? `<span>${t.expect()}</span>` : '';
+        });
+        const order = (ten ? ['ten'] : []).concat(crs ? ['fa', 'fb'] : [], ['circ', 'tapA', 'sa', 'tapB', 'sb', 'p', 'q']);
+        const ci = fin ? order.length : order.indexOf(s.step);
+        if (ten) {                                                                // （10倍）を おした あと：小数点に ななめ線
+            const tdone = ci > 0;
+            const tb = document.getElementById('kt-ten');
+            tb.classList.toggle('now', !tdone);
+            tb.classList.toggle('done', tdone);
+            document.querySelectorAll('#hi-panel .hi-dot').forEach(e => e.classList.toggle('cut', tdone));
+            document.querySelectorAll('#hi-panel .hi-z').forEach(e => e.classList.toggle('on', tdone));
+        }
+        const fid = { circ: 'hf-kc', sa: 'hf-ka', sb: 'hf-kb', p: 'hf-kp', q: 'hf-kq' };
+        if (crs) {
+            fid.fa = 'hf-kfa'; fid.fb = 'hf-kfb';
+            // 比は 2つまで：18：20 を 入れるまでは「分数の 比 ＝ ▢：▢」、入れたら「18：20 ＝ ▢：▢」
+            const past = ci > order.indexOf('fb');
+            document.getElementById('kfPre').style.display = past ? 'none' : '';
+            document.querySelectorAll('#hi-panel .kf-right').forEach(e => { e.style.display = past ? '' : 'none'; });
+        }
+        Object.keys(fid).forEach(k => {
+            const f = document.getElementById(fid[k]);
+            const i = order.indexOf(k);
+            f.classList.toggle('active', i === ci);
+            f.classList.toggle('filled', i < ci);
+        });
+        [['a', 'tapA'], ['b', 'tapB']].forEach(([x, step]) => {
+            const done = ci > order.indexOf(step);
+            const n = document.getElementById('kt-' + x);
+            n.classList.toggle('hi-cut', done);                                   // ななめ線
+            n.classList.toggle('tapnow', s.type === 'tap' && !done);              // いま クリックできる 数
+            document.getElementById('ks-' + x).classList.toggle('show', done);    // 下の □
+        });
+        const w = document.getElementById('hiWork');
+        if (w) w.classList.toggle('show', fin);
+    };
+    return {
+        sig: o ? o.sig : `kan1:${A}:${B}`,
+        html: `<div class="hi-kan${ten ? ' hi-kan10' : ''}${crs ? ' hi-kanfr' : ''}">
+                 ${ten ? `<div class="kn-t" style="grid-area:1/1/2/4"><button type="button" class="hi-ten" id="kt-ten" data-k="ten">（10倍）</button></div>` : ''}
+                 ${crs ? `<div class="kn-n" id="kfPre" style="grid-area:${2 + r}/1">${o.pre}<span style="margin-left:10px">＝</span></div>` : ''}
+                 <div class="kn-c" style="grid-area:${1 + r}/${2 + c}">${frame('hf-kc', box('Kc', String(g)), ' hi-circfr')}</div>
+                 <div class="kn-n" style="grid-area:${2 + r}/${1 + c}"><span class="hi-tap" id="kt-a" data-k="a">${crs ? frame('hf-kfa', box('Kfa', String(A))) : (o ? o.showA : A)}</span></div>
+                 <div class="kn-n" style="grid-area:${2 + r}/${2 + c}">：</div>
+                 <div class="kn-n" style="grid-area:${2 + r}/${3 + c}"><span class="hi-tap" id="kt-b" data-k="b">${crs ? frame('hf-kfb', box('Kfb', String(B))) : (o ? o.showB : B)}</span></div>
+                 <div class="kn-n${crs ? ' kf-right' : ''}" style="grid-area:${2 + r}/${4 + c}">＝</div>
+                 <div class="kn-n${crs ? ' kf-right' : ''}" style="grid-area:${2 + r}/${5 + c}">${frame('hf-kp', box('Kp', String(p)))}</div>
+                 <div class="kn-n${crs ? ' kf-right' : ''}" style="grid-area:${2 + r}/${6 + c}">：</div>
+                 <div class="kn-n${crs ? ' kf-right' : ''}" style="grid-area:${2 + r}/${7 + c}">${frame('hf-kq', box('Kq', String(q)))}</div>
+                 <div class="kn-s hi-later" id="ks-a" style="grid-area:${3 + r}/${1 + c}">${frame('hf-ka', box('Ka', String(p)))}</div>
+                 <div class="kn-s hi-later" id="ks-b" style="grid-area:${3 + r}/${3 + c}">${frame('hf-kb', box('Kb', String(q)))}</div>
+               </div>
+               <div class="hi-note">（できるだけ 小さい 整数の 比に しよう）</div>
+               <div class="hi-work hi-later" id="hiWork">${o ? o.work : `＝ (${A}÷${g})：(${B}÷${g}) ＝ ${p}：${q}`}</div>`,
+        slots: [],
+        makeStates: makeStates,
+        draw: draw,
+        onHint: (o && o.onHint) ? o.onHint : undefined,
+        ans: o ? o.ans : `${A}：${B} ＝ ${p}：${q}`
+    };
+}
+
+// 比を簡単にする（kan1〜3）の板
+function kanLay(sig, big, p, q, work, ans) {
+    return {
+        sig: sig,
+        html: `<div class="hi-big">${big}<span>＝</span>${F('p')}<span>：</span>${F('q')}</div>
+               <div class="hi-note">（できるだけ 小さい 整数の 比に しよう）</div>
+               <div class="hi-work hi-later">${work}</div>`,
+        slots: [NS('p', p, '比を 簡単に しよう。「：」の 前の 数を 入れよう。'), NS('q', q, '「：」の うしろの 数を 入れよう。')],
+        ans: ans
+    };
+}
+
+// 比の値（整数・小数）の 板と 手順
+//   A の みち：24/30 と 入れる → ○に 約分する数（6）→ ななめ線と 小さい数 → 4/5
+//   B の みち：はじめから 4/5 と 入れる → そのまま はなまる
+//   a, b：分数に する 整数（小数の ときは 10倍した 数）／o：sig・showA・showB（上の 表示）・head（式の 前）・name（答えの 文）
+function ataiLay(a, b, o) {
+    const g = gcd(a, b), n = a / g, d = b / g;
+    const T_DEN = '比の値を 分数で 答えよう。まず 分母を 入れよう。', T_NUM = 'つぎに 分子を 入れよう。';
+    const box = (id, str) => str.split('').map((c, i) => `<div class="ten-box" id="cell-${id}_${i}" style="display:none"></div>`).join('');
+    const frame = (fid, inner) => `<span class="ten-boxes ans-frame" id="${fid}">${inner}</span>`;
+    const red = g > 1;
+    const f1n = `<span class="hi-cutwrap">${frame('hf-f1n', box('An', String(a)) + (red ? box('Bn', String(n)) : ''))}<span class="hi-cutlab top hi-later" id="cutN">${n}</span></span>`;
+    const f1d = `<span class="hi-cutwrap">${frame('hf-f1d', box('Ad', String(b)) + (red ? box('Bd', String(d)) : ''))}<span class="hi-cutlab bot hi-later" id="cutD">${d}</span></span>`;
+    const more = red ? `<span class="hi-later" id="hiCirc"><span class="ten-boxes ans-frame hi-circfr" id="hf-fc">${box('Ac', String(g))}</span></span>
+                        <span class="hi-later hi-frac2" id="hiFrac2">＝<span class="hi-frac">${frame('hf-f2n', box('A2n', String(n)))}<span class="bar"></span>${frame('hf-f2d', box('A2d', String(d)))}</span></span>` : '';
+    // 手順（A の あとに B を ならべる。B の 1文字めは、A の 1文字めの 別解から とぶ）
+    const makeStates = () => {
+        const st = [];
+        const dig = (str, ph, step, id, text) => str.split('').forEach((ch, i) => st.push({
+            text: (i === 0) ? text : 'つづきを 入れよう。', type: 'input', targetCell: `${id}_${i}`,
+            expect: ((c) => () => Number(c))(ch), ph: ph, step: step }));
+        dig(String(b), 'A', 'den', 'Ad', T_DEN);
+        dig(String(a), 'A', 'num', 'An', T_NUM);
+        if (red) {
+            dig(String(g), 'A', 'circ', 'Ac', '約分できるね。何で 約分できますか。○に 入れよう。');
+            dig(String(d), 'A', 'den2', 'A2d', '約分した 分数の 分母を 入れよう。');
+            dig(String(n), 'A', 'num2', 'A2n', 'つぎに 分子を 入れよう。');
+        }
+        st.push({ text: 'できました！', type: 'finish', ph: 'A' });
+        if (red) {
+            const bStart = st.length;
+            dig(String(d), 'B', 'den', 'Bd', T_DEN);
+            dig(String(n), 'B', 'num', 'Bn', T_NUM);
+            st.push({ text: 'できました！', type: 'finish', ph: 'B' });
+            st[0].alts = [{ expect: st[bStart].expect, next: bStart + 1 }];
+        }
+        return st;
+    };
+    // 画面に 書く（いま A と B の どちらの みちか で 出すものを かえる）
+    const draw = (s) => {
+        const fin = s.type === 'finish', path = s.ph || 'A';
+        states.forEach((t, k) => {
+            if (t.type !== 'input') return;
+            const el = document.getElementById('cell-' + t.targetCell);
+            if (!el) return;
+            const on = (t.ph === path) && (k < state);
+            el.style.display = on ? '' : 'none';
+            el.innerHTML = on ? `<span>${t.expect()}</span>` : '';
+        });
+        const order = (path === 'A' && red) ? ['den', 'num', 'circ', 'den2', 'num2'] : ['den', 'num'];
+        const ci = fin ? order.length : order.indexOf(s.step);
+        const fid = { den: 'hf-f1d', num: 'hf-f1n', circ: 'hf-fc', den2: 'hf-f2d', num2: 'hf-f2n' };
+        Object.keys(fid).forEach(k => {
+            const f = document.getElementById(fid[k]);
+            if (!f) return;
+            const i = order.indexOf(k);
+            f.classList.toggle('active', i >= 0 && i === ci);
+            f.classList.toggle('filled', i >= 0 && i < ci);
+        });
+        const atCirc = path === 'A' && red && ci >= 2;      // ○ と 右の 分数を 出す
+        const cut = path === 'A' && red && ci >= 3;         // ななめ線と 小さい数
+        ['hiCirc', 'hiFrac2'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.toggle('show', atCirc); });
+        ['cutN', 'cutD'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.toggle('show', cut); });
+        ['hf-f1n', 'hf-f1d'].forEach(id => document.getElementById(id).classList.toggle('hi-cut', cut));
+        const w = document.getElementById('hiWork');
+        if (w) w.classList.toggle('show', fin);
+    };
+    return {
+        sig: o.sig,
+        html: `<div class="hi-big">${o.showA}<span class="hi-colon" id="hiColon"><b></b><i></i><b></b></span>${o.showB}</div>
+               <div class="hi-big hi-atai"><span class="hi-sm">比の値</span>＝<span class="hi-frac">${f1n}<span class="bar"></span>${f1d}</span>${more}</div>
+               <div class="hi-note">（約分できる ときは 約分しよう。仮分数の ままで よい）</div>
+               <div class="hi-work hi-later" id="hiWork">${o.head}${a} ÷ ${b} ＝ ${FR(a, b)}${g > 1 ? ' ＝ ' + FR(n, d) : ''}</div>`,
+        slots: [],
+        makeStates: makeStates,
+        draw: draw,
+        onHint: (s) => {
+            const colon = document.getElementById('hiColon');
+            if (colon.classList.contains('on')) {             // もう 出ている → ひっこめる
+                colon.classList.remove('on');
+                document.querySelectorAll('#hi-panel .hi-dot').forEach(e => e.classList.remove('cut'));
+                return;
+            }
+            if (s.ph !== 'A' || (s.step !== 'den' && s.step !== 'num')) return;
+            colon.classList.add('on');                                                                 // 「：」→「÷」
+            document.querySelectorAll('#hi-panel .hi-dot').forEach(e => e.classList.add('cut'));      // 小数点に ななめ線
+        },
+        ans: `${o.name} の 比の値 ＝ ${d}分の${n}`
+    };
+}
+
+// 等しい比を 自分で 作る（hito3）の 板と 手順
+//   答えは いくつも ある。A：B と 等しい 比なら 何でも 正解（もとの 比と 同じ もの・1つめと 同じ ものは だめ）
+//   テンキーで 数を 入れて「けってい」（Enter）。「けす」（Backspace）で 1文字 消す
+function freeHitoLay(A, B) {
+    const M = { rows: [['', ''], ['', '']], r: 0, c: 0, done: false };
+    const T0 = [`${A}：${B} と 等しい 比を 作ろう。「：」の 前の 数を 入れて、「けってい」を おそう。`,
+                '2つめの 等しい 比を 作ろう。「：」の 前の 数を 入れて、「けってい」を おそう。'];
+    const T1 = '「：」の うしろの 数を 入れて、「けってい」を おそう。';
+    const box = id => [0, 1, 2].map(i => `<div class="ten-box" id="cell-${id}_${i}" style="display:none"></div>`).join('');
+    const frame = (r, c) => `<span class="ten-boxes ans-frame" id="hf-H${r}${c}">${box('H' + r + c)}</span>`;
+    const row = r => `<div class="hi-big hi-frow" id="hfr-${r}">${A}：${B}<span>＝</span>${frame(r, 0)}<span>：</span>${frame(r, 1)}<span class="hi-later hi-val" id="hfv-${r}"></span></div>`;
+    // 正解の 横に 出す 赤い 文字（×2・÷3、どちらでも ない ときは 比の値）
+    const lab = (x, y) => (x % A === 0) ? `（×${x / A}）` : (A % x === 0) ? `（÷${A / x}）` : `（比の値 ${VAL(x, y)}）`;
+    const paint = (msg) => {
+        [0, 1].forEach(r => [0, 1].forEach(c => {
+            const str = M.rows[r][c];
+            [0, 1, 2].forEach(i => {
+                const el = document.getElementById(`cell-H${r}${c}_${i}`);
+                if (!el) return;
+                el.style.display = i < str.length ? '' : 'none';
+                el.innerHTML = i < str.length ? `<span>${str[i]}</span>` : '';
+            });
+            const f = document.getElementById(`hf-H${r}${c}`);
+            f.classList.toggle('active', !M.done && r === M.r && c === M.c);
+            f.classList.toggle('filled', r < M.r || (r === M.r && c < M.c));
+        }));
+        [0, 1].forEach(r => document.getElementById('hfv-' + r).classList.toggle('show', r < M.r));
+        document.getElementById('hiWork').classList.toggle('show', M.done);
+        document.querySelectorAll('#hi-panel .hi-fbtn').forEach(b => b.classList.toggle('done', M.done));
+        if (!M.done) document.getElementById('instruction').innerText = msg || (M.c === 0 ? T0[M.r] : T1);
+    };
+    const live = () => { const s = states[state]; return !M.done && s && s.free; };
+    const L = {
+        sig: `hito3:${A}:${B}`,
+        html: `<div class="hi-sm">${A}：${B} と 等しい 比を、2つ 作りましょう。</div>
+               ${row(0)}${row(1)}
+               <div class="hi-fbtns"><button type="button" class="hi-fbtn" id="hfDel">けす</button><button type="button" class="hi-fbtn ok" id="hfOk">けってい</button></div>
+               <div class="hi-later" id="hfHint" style="font-size:1.1rem;color:#1565c0">比の 両方の 数に 同じ 数を かけたり、同じ 数で わったり すると、等しい 比が できるよ。</div>
+               <div class="hi-work hi-later" id="hiWork">どちらも 比の値が ${VAL(A, B)} で、${A}：${B} と 等しい 比です。</div>`,
+        slots: [],
+        makeStates: () => [
+            { text: T0[0], type: 'input', free: true, expect: () => null },
+            { text: T0[1], type: 'input', free: true, expect: () => null },
+            { text: 'できました！', type: 'finish' }
+        ],
+        draw: () => paint(),
+        onHint: () => document.getElementById('hfHint').classList.toggle('show'),   // 答えは 出さない。もう一度 おすと ひっこむ
+        onKey: (v) => {                          // テンキー・数字キー
+            if (!live() || !/^[0-9]$/.test(v)) return;
+            const cur = M.rows[M.r][M.c];
+            if (cur.length >= 3) return;
+            if (cur === '' && v === '0') { handleWrong('numpad'); return; }   // 0 から はじまる 数は ない
+            playSound('click');
+            M.rows[M.r][M.c] = cur + v;
+            paint();
+        },
+        onDel: () => {                           // けす
+            if (!live()) return;
+            if (M.rows[M.r][M.c] === '' && M.c === 1) M.c = 0;
+            M.rows[M.r][M.c] = M.rows[M.r][M.c].slice(0, -1);
+            playSound('click');
+            paint();
+        },
+        onOk: () => {                            // けってい
+            if (!live() || M.rows[M.r][M.c] === '') return;
+            if (M.c === 0) { M.c = 1; playSound('click'); paint(); return; }
+            const x = +M.rows[M.r][0], y = +M.rows[M.r][1];
+            const same = (x === A && y === B);
+            const dup = (M.r === 1 && x === +M.rows[0][0] && y === +M.rows[0][1]);
+            if (x * B !== y * A || same || dup) {
+                handleWrong('hfr-' + M.r);
+                M.rows[M.r] = ['', ''];
+                M.c = 0;
+                paint(same ? 'もとの 比と 同じだよ。ちがう 比を 作ろう。'
+                     : dup ? '1つめと 同じだよ。ちがう 比を 作ろう。'
+                           : `${A}：${B} と 等しい 比に なって いないよ。もう一度 入れよう。`);
+                return;
+            }
+            document.getElementById('hfv-' + M.r).innerHTML = lab(x, y);
+            M.r++;
+            M.c = 0;
+            if (M.r === 2) {
+                M.done = true;
+                L.ans = `${A}：${B} ＝ ${M.rows[0][0]}：${M.rows[0][1]} ＝ ${M.rows[1][0]}：${M.rows[1][1]}`;
+            } else playSound('click');
+            state++;
+            updateUI();
+        },
+        ans: ''
+    };
+    return L;
+}
+
+// 比の意味（imi1）：ジュースの もとと 水を まぜて、見本と 同じ 味を 作る
+//   ① もとを 決めて 水を 入れる　② 水を 決めて もとを 入れる。コップの 色（こさ）と 比が その場で かわる
+function mixLay(P, Q, k1, k2) {
+    const J1 = P * k1, W1 = Q * k1, J2 = P * k2, W2 = Q * k2, MAX = 15, CAP = 30;   // CAP：コップいっぱいの カップ数
+    const M = { step: -1, j: 0, w: 0, rec: [] };
+    const col = (j, w) => { const c = j / (j + w), m = (a, b) => Math.round(a + (b - a) * c); return `rgb(${m(187, 239)},${m(222, 108)},${m(251, 0)})`; };
+    const cups = (n, k) => `<i class="${k}"></i>`.repeat(n);
+    const fill = (id, j, w) => { const f = document.getElementById(id), t = j + w; f.style.height = (t / CAP * 100) + '%'; f.style.background = t ? col(j, w) : 'transparent'; };
+    const row = (self, k, name, n) => `<div class="mx-row"><span class="mx-lab">${name}</span>`
+        + `<button type="button" class="mx-btn${self ? '' : ' off'}"${self ? ` data-k="${k}-"` : ''}>−</button>`
+        + `<span class="mx-cups"${self ? ` id="mxC${k}"` : ''}>${self ? '' : cups(n, k)}</span>`
+        + `<span class="mx-num"${self ? ` id="mxN${k}"` : ''}>${self ? '' : n}</span>`
+        + `<button type="button" class="mx-btn${self ? '' : ' off'}"${self ? ` data-k="${k}+"` : ''}>＋</button></div>`;
+    const free = () => (M.step === 0) ? 'w' : 'j';      // ①は 水、②は もとを 入れる
+    const paint = () => {
+        const fin = M.step === 2;
+        document.getElementById('mxCj').innerHTML = cups(M.j, 'j');
+        document.getElementById('mxCw').innerHTML = cups(M.w, 'w');
+        document.getElementById('mxNj').textContent = M.j;
+        document.getElementById('mxNw').textContent = M.w;
+        document.getElementById('mxR1').textContent = `${M.j}：${M.w}`;
+        fill('mxF0', P, Q);
+        fill('mxF1', M.j, M.w);
+        document.querySelectorAll('#mxSelf .mx-btn').forEach(b => { b.style.visibility = (!fin && b.dataset.k[0] === free()) ? '' : 'hidden'; });
+        document.getElementById('mxOk').classList.toggle('done', fin);
+        document.getElementById('mxRec').textContent = M.rec.join('　');
+        document.getElementById('hiWork').classList.toggle('show', fin);
+    };
+    return {
+        sig: `imi1:${P}:${Q}:${k1}:${k2}`,
+        html: `<div class="hi-q">ジュースの もとと 水を まぜて、ジュースを 作ります。<span class="hi-ask">見本と 同じ 味</span>の ジュースを 作りましょう。</div>
+               <div class="mx-wrap">
+                 <div class="mx-side"><div class="mx-title">見本</div><div class="mx-glass"><div class="mx-fill" id="mxF0"></div></div>
+                   ${row(false, 'j', 'もと', P)}${row(false, 'w', '水', Q)}<div class="mx-ratio">${P}：${Q}</div></div>
+                 <div class="mx-side" id="mxSelf"><div class="mx-title">自分</div><div class="mx-glass"><div class="mx-fill" id="mxF1"></div></div>
+                   ${row(true, 'j', 'もと')}${row(true, 'w', '水')}<div class="mx-ratio" id="mxR1"></div></div>
+               </div>
+               <div class="hi-fbtns"><button type="button" class="hi-fbtn ok" id="mxOk" data-k="ok">できた</button></div>
+               <div class="hi-line" id="mxRec" style="color:#d32f2f;min-height:1.5em"></div>
+               <div class="hi-later" id="mxHint" style="font-size:1.1rem;color:#1565c0"></div>
+               <div class="hi-work hi-later" id="hiWork">比が 等しいと、同じ 味（こさ）に なる。${P}：${Q} ＝ ${J1}：${W1} ＝ ${J2}：${W2}（比の値は どれも ${VAL(P, Q)}）</div>`,
+        slots: [],
+        makeStates: () => [
+            { text: `もとを ${J1}カップに したよ。水を 何カップ 入れると、見本と 同じ 味に なるかな。「＋」「−」で 入れて、「できた」を おそう。`, type: 'mix', step: 0 },
+            { text: `こんどは 水を ${W2}カップに したよ。もとを 何カップ 入れると、見本と 同じ 味に なるかな。`, type: 'mix', step: 1 },
+            { text: 'できました！', type: 'finish' }
+        ],
+        draw: (s) => {
+            const st = (s.type === 'finish') ? 2 : s.step;
+            if (st !== M.step) {                 // 手順が かわったら、自分の コップを 入れなおす
+                M.step = st;
+                if (st === 0) { M.j = J1; M.w = 0; }
+                if (st === 1) { M.j = 0; M.w = W2; }
+                document.getElementById('mxHint').classList.remove('show');
+            }
+            paint();
+        },
+        onHint: (s) => {                         // 何倍に なったかを 考える ヒント（答えの 数は 出さない）。もう一度 おすと ひっこむ
+            const h = document.getElementById('mxHint');
+            if (h.classList.contains('show')) { h.classList.remove('show'); return; }
+            if (s.type !== 'mix') return;
+            h.textContent = (s.step === 0) ? `もとは 見本の ${P}カップから ${J1}カップに なったね。何倍かな。水も 同じ 倍に すると…？`
+                                           : `水は 見本の ${Q}カップから ${W2}カップに なったね。何倍かな。もとも 同じ 倍に すると…？`;
+            h.classList.add('show');
+        },
+        onMix: (k) => {                          // ＋・−・できた
+            const s = states[state];
+            if (!k || !s || s.type !== 'mix') return;
+            if (k === 'ok') {
+                if (M.j * Q !== M.w * P) {
+                    handleWrong('mxSelf');
+                    const dense = M.j * Q > M.w * P;            // 見本より こい
+                    document.getElementById('instruction').innerText = dense
+                        ? (free() === 'w' ? '見本より 味が こいね。水を ふやそう。' : '見本より 味が こいね。もとを へらそう。')
+                        : (free() === 'w' ? '見本より 味が うすいね。水を へらそう。' : '見本より 味が うすいね。もとを ふやそう。');
+                    return;
+                }
+                M.rec.push(`${'①②'[M.step]} ${P}：${Q} ＝ ${M.j}：${M.w}`);
+                if (M.step === 0) playSound('click');
+                state++;
+                updateUI();
+                return;
+            }
+            const key = k[0], nv = M[key] + (k[1] === '+' ? 1 : -1);
+            if (key !== free() || nv < 0 || nv > MAX) return;
+            M[key] = nv;
+            playSound('click');
+            document.getElementById('instruction').innerText = s.text;
+            paint();
+        },
+        ans: `${P}：${Q} ＝ ${J1}：${W1} ＝ ${J2}：${W2}　比が 等しいと、同じ 味に なる`
+    };
+}
+
+// モードごとの 問題の作り方（sp を わたすと その問題。なければ ランダム）
+const HI_GEN = {
+    // 比の意味：見本と 同じ 味の ジュースを 作る
+    imi1(sp) {
+        if (!sp) {
+            for (;;) {
+                const pq = coprimePair(1, 4), k1 = rnd(2, 4), k2 = rnd(2, 4);
+                if (k1 !== k2 && Math.max(pq[0], pq[1]) * Math.max(k1, k2) <= 12) { sp = { P: pq[0], Q: pq[1], k1: k1, k2: k2 }; break; }
+            }
+        }
+        return mixLay(sp.P, sp.Q, sp.k1, sp.k2);
+    },
+    // 割合を比で表す
+    hyou1(sp) {
+        if (!sp) { const t = rnd(0, HYOU_T.length - 1), T = HYOU_T[t]; const ab = coprimePair(T.lo, T.hi); sp = { t: t, a: ab[0], b: ab[1], rev: Math.random() < 0.3 }; }
+        const T = HYOU_T[sp.t], x = sp.rev ? sp.b : sp.a, y = sp.rev ? sp.a : sp.b;
+        return {
+            sig: `hyou:${sp.t}:${sp.a}:${sp.b}:${sp.rev}`,
+            html: `<div class="hi-q">${T.q(sp.a, sp.b)}<br><span class="hi-ask">${sp.rev ? T.askR : T.ask}</span>を、比で 表しましょう。</div>
+                   <div class="hi-big">${F('a')}<span>：</span>${F('b')}</div>`,
+            slots: [NS('a', x, '比で 表そう。「：」の 前の 数を 入れよう。'), NS('b', y, '「：」の うしろの 数を 入れよう。')],
+            ans: `答え　${x}：${y}`
+        };
+    },
+    // 比の値（整数）
+    //   A の みち：24/30 と 入れる → ○に 約分する数（6）→ ななめ線と 小さい数 → 4/5
+    //   B の みち：はじめから 4/5 と 入れる → そのまま はなまる
+    //   ヒント：「：」の 間に 横線が 出て「÷」に なる
+    atai1(sp) {
+        if (!sp) {
+            for (;;) {
+                const pq = coprimePair(1, 12, 2, 12); const g0 = Math.random() < 0.5 ? 1 : rnd(2, 5);
+                const c = { a: pq[0] * g0, b: pq[1] * g0 };
+                // A と B で 分母の 1文字めが 同じだと 見分けられないので、その問題は 出さない
+                if (g0 === 1 || String(c.b)[0] !== String(pq[1])[0]) { sp = c; break; }
+            }
+        }
+        return ataiLay(sp.a, sp.b, { sig: `atai1:${sp.a}:${sp.b}`, showA: String(sp.a), showB: String(sp.b), head: '', name: `${sp.a}：${sp.b}` });
+    },
+    // 比の値（小数）
+    //   ヒント：小数点に ななめ線（10倍して 整数に）＋「：」が「÷」に。あとは 整数と 同じ
+    atai2(sp) {
+        if (!sp) {
+            for (;;) {
+                const pq = coprimePair(1, 12, 2, 12); const g0 = rnd(1, 6), A = pq[0] * g0, B = pq[1] * g0;
+                // 2つとも 小数（.0 で ない）。A と B で 分母の 1文字めが 同じ 問題は 出さない
+                if (A % 10 !== 0 && B % 10 !== 0 && A < 100 && B < 100 && (g0 === 1 || String(B)[0] !== String(pq[1])[0])) { sp = { A: A, B: B }; break; }
+            }
+        }
+        const dec = n => `${Math.floor(n / 10)}<span class="hi-dot">.</span>${n % 10}`;   // 小数点を ななめ線で 消せるように
+        const a = d10(sp.A), b = d10(sp.B);
+        return ataiLay(sp.A, sp.B, { sig: `atai2:${sp.A}:${sp.B}`, showA: dec(sp.A), showB: dec(sp.B), head: `${a} ÷ ${b} ＝ `, name: `${a}：${b}` });
+    },
+
+    // 等しい比を見つける（㋐〜㋓から2つ）
+    hito1(sp) {
+        if (!sp) {
+            for (;;) {
+                const pq = coprimePair(1, 9), p = pq[0], q = pq[1];
+                const m = rnd(1, 3), A = p * m, B = q * m;
+                const ks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(k => k !== m).sort(() => Math.random() - 0.5);
+                const k3 = rnd(1, 6), k4 = rnd(1, 4), c = rnd(1, 5);
+                const opts = [[p * ks[0], q * ks[0]], [p * ks[1], q * ks[1]],   // 等しい比
+                              [q * k3, p * k3],                                  // 前と うしろが 逆
+                              [p * k4 + c, q * k4 + c]]                          // 同じ数を たした
+                             .sort(() => Math.random() - 0.5);
+                const keys = opts.map(o => o.join(':'));
+                if (new Set(keys).size === 4 && !keys.includes(`${A}:${B}`) && opts.every(o => o[0] <= 99 && o[1] <= 99)) { sp = { A: A, B: B, opts: opts }; break; }
+            }
+        }
+        const K = ['a', 'i', 'u', 'e'], KANA = ['㋐', '㋑', '㋒', '㋓'];
+        const good = sp.opts.map((o, i) => (o[0] * sp.B === o[1] * sp.A) ? K[i] : null).filter(Boolean);
+        return {
+            sig: `hito1:${sp.A}:${sp.B}:${sp.opts.join('|')}`,
+            html: `<div class="hi-big">${sp.A}：${sp.B}<span class="hi-later hi-val">比の値 ${VAL(sp.A, sp.B)}</span></div>
+                   <div class="hi-sm">と 等しい 比を、下から 2つ えらびましょう。</div>
+                   <div class="hi-choices">${sp.opts.map((o, i) =>
+                       `<button class="hi-choice" id="hc-${K[i]}" data-k="${K[i]}"><span class="kana">${KANA[i]}</span>${o[0]}：${o[1]}<span class="hi-later hi-val">→${VAL(o[0], o[1])}</span></button>`).join('')}</div>
+                   <div class="hi-work hi-later">比の値が 等しい 比を 見つけよう。</div>`,
+            slots: [{ id: 'ch', kind: 'choose', expect: good, text: `${sp.A}：${sp.B} と 等しい 比を 2つ タップしよう。`, reveal: [] }],
+            ans: `${sp.A}：${sp.B} と 等しい 比は ${good.map(k => KANA[K.indexOf(k)]).join(' と ')}`
+        };
+    },
+    // 等しい比の □にあてはまる数（上の やじるしは 出ている）
+    hito2(sp) {
+        if (!sp) { const ab = coprimePair(2, 9); sp = { a: ab[0], b: ab[1], op: pick(['×', '÷']), k: rnd(2, 9) }; }
+        const mul = sp.op === '×';
+        const v = mul ? [sp.a, sp.b, sp.a * sp.k, sp.b * sp.k] : [sp.a * sp.k, sp.b * sp.k, sp.a, sp.b];
+        return {
+            sig: `hito2:${v.join(':')}`,
+            html: eqHtml([v[0], v[1], v[2], F('d')], { html: `${sp.op}${sp.k}` }, { html: `${sp.op}${F('k')}` })
+                + `<div class="hi-work hi-later">${mul ? '比の 両方の 数に 同じ 数を かけて できる 比は、もとの 比と 等しい。'
+                                                       : '比の 両方の 数を 同じ 数で わって できる 比は、もとの 比と 等しい。'}</div>`,
+            slots: [NS('k', sp.k, `下の「${sp.op}□」に あてはまる 数を 入れよう。`), NS('d', v[3], '□に あてはまる 数を 入れよう。')],
+            ans: `${v[0]}：${v[1]} ＝ ${v[2]}：${v[3]}`
+        };
+    },
+    // 等しい比を 自分で 作る（答えは いくつも ある）
+    hito3(sp) {
+        if (!sp) { const pq = coprimePair(1, 9), m = pick([1, 1, 2, 3]); sp = { A: pq[0] * m, B: pq[1] * m }; }
+        return freeHitoLay(sp.A, sp.B);
+    },
+    // 比を簡単に（整数）
+    kan1(sp) {
+        if (!sp) {
+            for (;;) { const pq = coprimePair(1, 12); const g = rnd(2, 20), A = pq[0] * g, B = pq[1] * g;
+                       if (A <= 200 && B <= 200 && A >= 10 && B >= 10) { sp = { A: A, B: B }; break; } }
+        }
+        return kanTapLay(sp.A, sp.B);
+    },
+    // 比を簡単に（小数）
+    kan2(sp) {
+        if (!sp) {
+            for (;;) { const pq = coprimePair(1, 9); const g = rnd(2, 9), A = pq[0] * g, B = pq[1] * g;
+                       if (A % 10 !== 0 || B % 10 !== 0) { sp = { A: A, B: B }; break; } }
+        }
+        const a = d10(sp.A), b = d10(sp.B), g = gcd(sp.A, sp.B), p = sp.A / g, q = sp.B / g;
+        // 小数点は ななめ線で 消せるように。整数（4 など）は 10倍で 赤い 0 が つく
+        const dec = n => (n % 10 === 0) ? `${n / 10}<span class="hi-z">0</span>` : `${Math.floor(n / 10)}<span class="hi-dot">.</span>${n % 10}`;
+        return kanTapLay(sp.A, sp.B, { sig: `kan2:${sp.A}:${sp.B}`, label: `${a}：${b}`, showA: dec(sp.A), showB: dec(sp.B),
+                      work: `＝ (${a}×10)：(${b}×10) ＝ ${sp.A}：${sp.B}${g > 1 ? ` ＝ ${p}：${q}` : ''}`, ans: `${a}：${b} ＝ ${p}：${q}` });
+    },
+    // 比を簡単に（分数）
+    kan3(sp) {
+        if (!sp) {
+            for (;;) { const d1 = rnd(2, 9), d2 = rnd(2, 9); if (d1 === d2) continue;
+                       const n1 = rnd(1, d1 - 1), n2 = rnd(1, d2 - 1);
+                       // ななめに かけた 比（18：20）が もっと 簡単に できる 問題だけ（○の 手順が あるので）
+                       if (gcd(n1, d1) === 1 && gcd(n2, d2) === 1 && gcd(n1 * d2, n2 * d1) > 1) { sp = { n1: n1, d1: d1, n2: n2, d2: d2 }; break; } }
+        }
+        // ななめに かける：3/4：5/6 → (3×6)：(5×4) ＝ 18：20
+        const A = sp.n1 * sp.d2, B = sp.n2 * sp.d1;
+        const g = gcd(A, B), p = A / g, q = B / g;
+        const fr = (n, d, k) => `<span class="hi-frac"><span id="cr-n${k}">${n}</span><span class="bar"></span><span id="cr-d${k}">${d}</span></span>`;
+        return kanTapLay(A, B, {
+            sig: `kan3:${sp.n1}/${sp.d1}:${sp.n2}/${sp.d2}`,
+            pre: `<span class="hi-crs" id="hiCrs">${fr(sp.n1, sp.d1, 1)}<span style="margin:0 24px">：</span>${fr(sp.n2, sp.d2, 2)}</span>`,
+            work: `＝ (${sp.n1}×${sp.d2})：(${sp.n2}×${sp.d1}) ＝ ${A}：${B} ＝ ${p}：${q}`,
+            ans: `${sp.d1}分の${sp.n1}：${sp.d2}分の${sp.n2} ＝ ${p}：${q}`,
+            onHint: (s) => {                                   // ななめの やじるし（4 → 5、6 → 3）。もう一度 おすと ひっこむ
+                const host = document.getElementById('hiCrs');
+                const old = document.getElementById('hiCrsSvg');
+                if (old) { old.remove(); return; }
+                if (s.step !== 'fa' && s.step !== 'fb') return;
+                const bx = id => { const e = document.getElementById(id); return { l: e.offsetLeft, t: e.offsetTop, r: e.offsetLeft + e.offsetWidth, b: e.offsetTop + e.offsetHeight }; };
+                const n1 = bx('cr-n1'), d1 = bx('cr-d1'), n2 = bx('cr-n2'), d2 = bx('cr-d2');
+                const ln = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e53935" stroke-width="3" marker-end="url(#crHead)"/>`;
+                host.insertAdjacentHTML('beforeend',
+                    `<svg id="hiCrsSvg" class="hi-crs-svg" width="${host.offsetWidth}" height="${host.offsetHeight}">
+                       <defs><marker id="crHead" markerUnits="userSpaceOnUse" markerWidth="16" markerHeight="16" refX="12" refY="8" orient="auto">
+                         <path d="M0,1 L14,8 L0,15 Z" fill="#e53935"/></marker></defs>
+                       ${ln(d1.r + 2, (d1.t + d1.b) / 2, n2.l - 3, (n2.t + n2.b) / 2)}
+                       ${ln(d2.l - 2, (d2.t + d2.b) / 2, n1.r + 3, (n1.t + n1.b) / 2)}
+                     </svg>`);
+            }
+        });
+    },
+    // x の表す数（整数）
+    xmo1(sp) {
+        if (!sp) {
+            const k = rnd(2, 9), xi = pick([2, 3]);
+            if (Math.random() < 0.5) { const ab = coprimePair(2, 12); sp = { v: [ab[0], ab[1], ab[0] * k, ab[1] * k], xi: xi }; }
+            else { const pq = coprimePair(2, 9); sp = { v: [pq[0] * k, pq[1] * k, pq[0], pq[1]], xi: xi }; }
+        }
+        const X = xLay(sp.v, sp.xi);
+        return {
+            sig: `xmo:${sp.v.join(':')}:${sp.xi}`,
+            html: X.eq + `<div class="hi-big" style="margin-top:22px">${XV}<span>＝</span>${F('x')}</div><div class="hi-work hi-later">${X.work}</div>`,
+            slots: X.slots,
+            ans: `${X.eqText}　（x ＝ ${X.xv}）`
+        };
+    },
+    // x の表す数（小数が入る）
+    xmo2(sp) {
+        if (!sp) {
+            for (;;) {
+                const D = pick([2, 4, 5, 6, 8, 12, 15, 25]);                       // 0.2〜2.5（10倍した数）
+                // 10倍した あと（50：8）でも やじるしが 整数で わりきれる もの（÷2・÷5）だけ
+                const ks = [2, 3, 4, 5, 6, 7, 8, 9].filter(k => (D * k) % 10 === 0 && 10 % k === 0);
+                if (!ks.length) continue;
+                const k = pick(ks), a = rnd(2, 12), di = pick([0, 1]);
+                const v = (di === 0) ? [D / 10, a, D * k / 10, a * k] : [a, D / 10, a * k, D * k / 10];
+                sp = { v: v, xi: (di === 0) ? 3 : 2 };
+                break;
+            }
+        }
+        // 左の 比を 10倍（5：0.8 → 50：8）してから、やじるしで x を 出す
+        const v = sp.v, xi = sp.xi;
+        const v10 = v.map((n, i) => (i < 2) ? Math.round(n * 10) : n);
+        const dec = n => {                    // 小数点・前の 0 は ななめ線で 消せるように。整数は 赤い 0 が つく
+            const T = Math.round(n * 10);
+            if (T % 10 === 0) return `${T / 10}<span class="hi-z">0</span>`;
+            const ip = Math.floor(T / 10);
+            return ip === 0 ? `<span class="hi-zc">0.</span>${T % 10}` : `${ip}<span class="hi-dot">.</span>${T % 10}`;   // 0.8 は「0.」を 1本の 線で 消す
+        };
+        const disp = v.map((n, i) => (i < 2) ? dec(n) : fmt(n));
+        const X = xLay(v10, xi, disp);
+        const nv = v.map((n, i) => (i === xi) ? X.xv : n);
+        const lab = `${fmt(v[0])}：${fmt(v[1])}`;
+        return {
+            sig: `xmo:${v.join(':')}:${xi}`,
+            html: `<div class="hi-eq" style="grid-template-rows:auto"><div style="grid-row:1;grid-column:1/4;justify-self:center">
+                     <button type="button" class="hi-ten" id="kt-ten" data-k="ten">（10倍）</button></div></div>`
+                + X.eq + `<div class="hi-big" style="margin-top:22px">${XV}<span>＝</span>${F('x')}</div>`
+                + `<div class="hi-work hi-later">${lab} ＝ ${v10[0]}：${v10[1]}　${X.work}</div>`,
+            pre: [{ text: `${lab} を 10倍して、整数の 比に しよう。（10倍）を おそう。`, type: 'tap', expect: 'ten' }],
+            slots: X.slots,
+            onDraw: (s) => {                  // （10倍）を おした あと：小数点・前の 0 に ななめ線、整数に 赤い 0
+                const tdone = s.type !== 'tap';
+                const tb = document.getElementById('kt-ten');
+                tb.classList.toggle('now', !tdone);
+                tb.classList.toggle('done', tdone);
+                document.querySelectorAll('#hi-panel .hi-dot, #hi-panel .hi-zc').forEach(e => e.classList.toggle('cut', tdone));
+                document.querySelectorAll('#hi-panel .hi-z').forEach(e => e.classList.toggle('on', tdone));
+            },
+            ans: `${fmt(nv[0])}：${fmt(nv[1])} ＝ ${fmt(nv[2])}：${fmt(nv[3])}　（x ＝ ${X.xv}）`
+        };
+    },
+    // 文章題：一方の量を求める（比の式 と x で とく）
+    bun1(sp) {
+        if (!sp) { const t = rnd(0, BUN1_T.length - 1), T = BUN1_T[t]; const pq = coprimePair(2, 9); sp = { t: t, p: pq[0], q: pq[1], gi: pick([1, 2]), k: rnd(T.k[0], T.k[1]) * T.k[2] }; }
+        const T = BUN1_T[sp.t];
+        const X = (sp.gi === 1 ? sp.p : sp.q) * sp.k, ansv = (sp.gi === 1 ? sp.q : sp.p) * sp.k;
+        const v = (sp.gi === 1) ? [sp.p, sp.q, X, 0] : [sp.p, sp.q, 0, X];
+        const XL = xLay(v, sp.gi === 1 ? 3 : 2);
+        const lab = [sp.gi === 1 ? `${X}${T.u}` : `□${T.u}`, sp.gi === 2 ? `${X}${T.u}` : `□${T.u}`];
+        const tape = `<div class="hi-tape">${[sp.p, sp.q].map((n, i) =>
+            `<div class="tp-g" style="flex:${n}"><div class="tp-lab">${lab[i]}</div><div class="tp-brk"></div><div class="tp-bar">${'<i></i>'.repeat(n)}</div><div class="tp-brk dn"></div><div class="tp-lab">${T.n[i]}（${n}）</div></div>`).join('')}</div>`;
+        return {
+            sig: `bun1:${sp.t}:${sp.p}:${sp.q}:${sp.gi}:${sp.k}`,
+            html: `<div class="hi-q">${T.s(sp.p, sp.q)}<br>${T.ask(sp.gi, X)}</div>${tape}${XL.eq}
+                   <div class="hi-big">${XV}<span>＝</span>${F('x')}<span class="hi-later hi-line" style="margin-left:18px">答え　${ansv}${T.u}</span></div>`,
+            slots: XL.slots,
+            ans: `${XL.eqText}　答え ${ansv}${T.u}`
+        };
+    },
+    // 文章題：全体を部分に分ける（テストの えりかさんの 考え方）
+    bun2(sp) {
+        if (!sp) { const t = rnd(0, BUN2_T.length - 1), B = BUN2_T[t]; const pq = coprimePair(2, 9); sp = { t: t, p: pq[0], q: pq[1], k: rnd(B.k[0], B.k[1]) * B.k[2] }; }
+        const B = BUN2_T[sp.t], w = sp.p + sp.q, T = w * sp.k, ansv = sp.p * sp.k;
+        const tape = `<div class="hi-tape-wrap"><div class="tp-lab">${T}${B.u}</div><div class="tp-brk"></div>
+            <div class="hi-tape">${[sp.p, sp.q].map((n, i) =>
+                `<div class="tp-g" style="flex:${n}"><div class="tp-bar">${'<i></i>'.repeat(n)}</div><div class="tp-lab">${B.n[i]}（${n}）</div></div>`).join('')}</div>
+            <div class="tp-brk dn"></div><div class="hi-line">${B.whole}（${F('w')}）</div></div>`;
+        return {
+            sig: `bun2:${sp.t}:${sp.p}:${sp.q}:${sp.k}`,
+            html: `<div class="hi-q">${B.s(T, sp.p, sp.q)}</div>${tape}
+                   <div class="hi-line hi-later" id="l2">${B.n[0]}の 分は、全体を 1と みると ${FRB(F('num'), F('den'))} に あたります。</div>
+                   <div class="hi-line hi-later" id="l3">式　${T} × ${FR(sp.p, w)} ＝ ${F('ans')}<span class="hi-later" id="l4">　答え　${ansv}${B.u}</span></div>`,
+            slots: [NS('w', w, `${B.whole}は、いくつ分に あたりますか。`, ['l2']),
+                    NS('den', w, `${B.n[0]}の 分は、全体を 1と みると 何分の何？ まず 分母を 入れよう。`),
+                    NS('num', sp.p, 'つぎに 分子を 入れよう。', ['l3']),
+                    NS('ans', ansv, `${B.n[0]}の ${B.thing}を 求めよう。式の 答えを 入れよう。`, ['l4'])],
+            ans: `${T} × ${sp.p}/${w} ＝ ${ansv}　答え ${ansv}${B.u}`
+        };
+    }
+};
+
+// 板を作る（1問ごとに1回）：中身を入れて、答えの▢に 1文字ずつの 箱を ならべる
+function renderHi() {
+    document.getElementById('hi-panel').innerHTML = hiLay.html;
+    hiLay.slots.forEach(sl => {
+        if (sl.kind === 'choose') return;
+        const f = document.getElementById('hf-' + sl.id);
+        sl.ans.split('').forEach((ch, i) => {
+            const b = document.createElement('div');
+            b.className = 'ten-box';
+            b.id = `cell-${sl.id}_${i}`;
+            f.appendChild(b);
+        });
+    });
+    fixHiFrames();
+}
+
+// 答えの▢の 横はばを はじめから 決めておく（数を 入れても 式が 左右に ずれないように）
+//   その問題で いちばん 長い 答えの けた数（少なくとも 2けた）に そろえる。○（約分）は のぞく
+function fixHiFrames() {
+    const frames = [...document.querySelectorAll('#hi-panel .ans-frame')].filter(f => !f.classList.contains('hi-circfr'));
+    const digits = f => {          // ▢の 中の 答えの けた数（比の値は A・B の 2とおり あるので 長い方）
+        const c = {};
+        [...f.children].forEach(b => { if (!b.id) return; const k = b.id.replace(/_\d+$/, ''); c[k] = (c[k] || 0) + 1; });
+        return Math.max(0, ...Object.values(c));
+    };
+    const N = Math.max(2, ...frames.map(digits));
+    frames.forEach(f => {
+        const box = f.querySelector('.ten-box');
+        if (!box) return;
+        const fs = getComputedStyle(f), bs = getComputedStyle(box);
+        const w = N * parseFloat(bs.width) + (N - 1) * (parseFloat(fs.columnGap) || 0)
+                + parseFloat(fs.paddingLeft) + parseFloat(fs.paddingRight)
+                + parseFloat(fs.borderLeftWidth) + parseFloat(fs.borderRightWidth);
+        f.style.minWidth = Math.ceil(w) + 'px';
+    });
+}
+window.addEventListener('resize', () => { if (isHi(mode) && hiLay) fixHiFrames(); });
+
+// 画面に 入りきらない ときは、アプリ全体を 小さくして 1画面に 収める（見きれ ふせぎ）
+function fitApp() {
+    const app = document.getElementById('app-container');
+    const h = app.offsetHeight, w = app.offsetWidth;          // transform の 前の 大きさ
+    const sc = Math.min(1, (window.innerHeight - 12) / h, (window.innerWidth - 4) / w);
+    if (sc < 1) {
+        app.style.transform = `scale(${sc})`;
+        app.style.transformOrigin = 'top center';
+        app.style.marginBottom = `${-h * (1 - sc)}px`;                 // 小さくした ぶん、上下の 中央に そろえる
+        app.style.marginLeft = app.style.marginRight = `${-w * (1 - sc) / 2}px`;
+    } else {
+        app.style.transform = app.style.transformOrigin = '';
+        app.style.marginBottom = app.style.marginLeft = app.style.marginRight = '';
+    }
+}
+window.addEventListener('resize', fitApp);
+if (window.ResizeObserver) new ResizeObserver(fitApp).observe(document.getElementById('app-container'));   // 問題・タブで 高さが かわったとき
+
+// そのステートで 画面に 書きこむこと
+function drawHi(s) {
+    const L = hiLay;
+    if (!L) return;
+    if (L.draw) { L.draw(s); return; }   // 自分で 書く 問題（比の値の 整数）
+    const fin = s.type === 'finish';
+    const cur = fin ? L.slots.length : s.slot;
+    states.forEach((st, k) => {
+        if (st.type !== 'input') return;
+        const el = document.getElementById('cell-' + st.targetCell);
+        if (!el) return;
+        const shown = fin || k < state;
+        el.style.display = shown ? '' : 'none';
+        el.innerHTML = shown ? `<span>${L.slots[st.slot].ans[st.digit]}</span>` : '';
+    });
+    L.slots.forEach((sl, i) => {
+        const f = document.getElementById('hf-' + sl.id);
+        if (f) { f.classList.toggle('active', i === cur); f.classList.toggle('filled', i < cur); }
+        if (i < cur) sl.reveal.forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('show'); });
+        if (sl.kind === 'choose') {
+            document.querySelectorAll('#hi-panel .hi-choice').forEach(b => b.classList.toggle('picked',
+                (i < cur && sl.expect.includes(b.dataset.k)) || (i === cur && hiPicked.includes(b.dataset.k))));
+        }
+    });
+    if (fin) document.querySelectorAll('#hi-panel .hi-later').forEach(e => e.classList.add('show'));
+    if (L.onDraw) L.onDraw(s);
+}
+
+// 比を簡単に（整数）：54 や 45 を クリック
+document.getElementById('hi-panel').addEventListener('click', e => {
+    const t = e.target.closest('.hi-tap, .hi-ten');
+    if (!t) return;
+    const s = states[state];
+    if (!s || s.type !== 'tap') return;
+    if (t.dataset.k !== s.expect) { handleWrong(t.id); return; }
+    playSound('click');
+    state++;
+    updateUI();
+});
+
+// 等しい比を作る（けす・けってい）／比の意味（＋・−・できた）
+document.getElementById('hi-panel').addEventListener('click', e => {
+    const b = e.target.closest('.hi-fbtn, .mx-btn');
+    if (!b || !hiLay) return;
+    if (b.id === 'hfOk' && hiLay.onOk) hiLay.onOk();
+    else if (b.id === 'hfDel' && hiLay.onDel) hiLay.onDel();
+    else if (hiLay.onMix) hiLay.onMix(b.dataset.k);
+});
+// 等しい比を作る：Enter で けってい、Backspace で けす
+document.addEventListener('keydown', e => {
+    if (!isHi(mode) || !hiLay || !hiLay.onOk) return;
+    const s = states[state];
+    if (!s || !s.free) return;
+    if (e.key === 'Enter') { e.preventDefault(); hiLay.onOk(); }
+    else if (e.key === 'Backspace') { e.preventDefault(); hiLay.onDel(); }
+});
+
+// ㋐〜㋓ を タップ
+document.getElementById('hi-panel').addEventListener('click', e => {
+    const b = e.target.closest('.hi-choice');
+    if (!b) return;
+    const s = states[state];
+    if (!s || s.type !== 'choose') return;
+    const k = b.dataset.k;
+    if (!s.expect.includes(k)) { handleWrong(b.id); return; }
+    if (hiPicked.includes(k)) return;
+    hiPicked.push(k);
+    b.classList.add('picked');
+    b.classList.remove('hint-glow');
+    playSound('click');
+    if (s.expect.every(x => hiPicked.includes(x))) {
+        const cur = state;
+        setTimeout(() => {
+            if (state !== cur) return;
+            state++;
+            hiPicked = [];
+            updateUI();
+        }, 300);
+    }
+});
+
+// =====================================================================
+// 画面を、いまの手順（states[state]）に合わせる
+// =====================================================================
+function updateUI() {
+    const s = states[state];
+    document.getElementById('instruction').innerText = s.text;
+
+    // ヒントと選択状態のクリア
+    document.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
+    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.selected-group-left').forEach(el => el.classList.remove('selected-group-left'));
+    document.querySelectorAll('.selected-group-mid').forEach(el => el.classList.remove('selected-group-mid'));
+    document.querySelectorAll('.selected-group-right').forEach(el => el.classList.remove('selected-group-right'));
+    selectedCells = [];
+
+    // ガイド矢印のクリア
+    document.querySelectorAll('.guide-arrow').forEach(el => el.remove());
+
+    // テンキーは、数を入れる手順のときだけ出す
+    const numpad = document.getElementById('numpad');
+    if (s.type === 'input') {
+        numpad.classList.add('visible');
+    } else {
+        numpad.classList.remove('visible');
+    }
+    // テンキーの「.」と、×÷＋− のキー
+    const dotBtn = document.querySelector('.num-btn.dot-btn');
+    if (dotBtn) dotBtn.style.visibility = DOT_MODES.includes(mode) ? '' : 'hidden';
+    document.getElementById('op-pad').classList.toggle('visible', OP_PAD_MODES.includes(mode) && s.type === 'input');
+
+    // ===== 比のタブ専用の描画。ここで完結して return =====
+    if (isHi(mode)) {
+        drawHi(s);
+        if (s.type === 'finish') {
+            document.getElementById('instruction').innerText = answerText();
+            if (!document.getElementById('hanamaru').classList.contains('show')) {
+                showClearEffect();
+            }
+        }
+        return;
+    }
+
+    // ===== 計算タブ専用の描画。ここで完結して return =====
+    if (isKei(mode)) {
+        drawKei(s);
+        if (s.type === 'finish') {
+            document.getElementById('instruction').innerText = answerText();
+            if (!document.getElementById('hanamaru').classList.contains('show')) {
+                showClearEffect();
+            }
+        }
+        return;
+    }
+
+    // ===== わり算の筆算：ステートごとの描画更新 =====
+    if (state === 1) {
+        if (mode === '2digit') {
+            document.getElementById('cell-r0-c3').innerHTML = '<span class="red-text">A</span>';
+            document.getElementById('cell-r0-c4').innerHTML = '<span class="red-text">B</span>';
+        } else {
+            document.getElementById('cell-r0-c3').innerHTML = '<span class="red-text">A</span>';
+            document.getElementById('cell-r0-c4').innerHTML = '<span class="red-text">B</span>';
+            document.getElementById('cell-r0-c5').innerHTML = '<span class="red-text">C</span>';
+        }
+    }
+    if (state === 2) {
+        if (mode === '2digit') {
+            document.getElementById('cell-r0-c3').innerHTML = '<div class="box-input"></div>';
+            document.getElementById('cell-r0-c4').innerHTML = ''; // Bを消す
+        } else if (mode === '3digit1') {
+            document.getElementById('cell-r0-c3').innerHTML = '<div class="box-input"></div>';
+            document.getElementById('cell-r0-c4').innerHTML = '';
+            document.getElementById('cell-r0-c5').innerHTML = '';
+        } else if (mode === '3digit2') {
+            document.getElementById('cell-r0-c3').innerHTML = '';
+            document.getElementById('cell-r0-c4').innerHTML = '<div class="box-input"></div>';
+            document.getElementById('cell-r0-c5').innerHTML = '';
+        }
+    }
+    if (state === 5) { // かけ算1完了
+        if (mode === '3digit1') {
+            document.getElementById('cell-r2-c3').innerText = sub1;
+            document.getElementById('cell-r2-c3').classList.remove('border-hidden');
+        } else if (mode === '3digit2') {
+            const prod = sub1;
+            document.getElementById('cell-r2-c3').innerText = Math.floor(prod / 10) || '';
+            document.getElementById('cell-r2-c4').innerText = prod % 10;
+            document.getElementById('cell-r2-c3').classList.remove('border-hidden');
+            document.getElementById('cell-r2-c4').classList.remove('border-hidden');
+        } else {
+            if (sub1 >= 10) {
+                document.getElementById('cell-r2-c2').innerText = Math.floor(sub1 / 10);
+                document.getElementById('cell-r2-c3').innerText = sub1 % 10;
+                document.getElementById('cell-r2-c2').classList.remove('border-hidden');
+                document.getElementById('cell-r2-c3').classList.remove('border-hidden');
+            } else {
+                document.getElementById('cell-r2-c3').innerText = sub1;
+                document.getElementById('cell-r2-c3').classList.remove('border-hidden');
+            }
+        }
+    }
+    if (state === 7) { // ひき算1完了
+        if (mode === '3digit1') {
+            const minuend = Math.floor(dividend / 100);
+            const diff = minuend - sub1;
+            document.getElementById('cell-r3-c3').innerText = diff > 0 ? diff : '';
+        } else if (mode === '3digit2') {
+            const minuend = Math.floor(dividend / 10);
+            const diff = minuend - sub1;
+            document.getElementById('cell-r3-c4').innerText = diff > 0 ? diff : '';
+        } else {
+            const minuend = Math.floor(dividend / 10);
+            const diff = minuend - sub1;
+            document.getElementById('cell-r3-c3').innerText = diff > 0 ? diff : '';
+        }
+    }
+    if (state === 8) { // おろす待機
+        if (mode === '3digit1') {
+            const cell = document.getElementById('cell-r1-c4');
+            const numToDrop = Math.floor((dividend % 100) / 10);
+            cell.innerHTML = `<span class="draggable-span" id="drag-target-span">${numToDrop}</span>`;
+            initDragDrop('drag-target-span', 'cell-r3-c4');
+        } else if (mode === '3digit2') {
+            const cell = document.getElementById('cell-r1-c5');
+            const numToDrop = dividend % 10;
+            cell.innerHTML = `<span class="draggable-span" id="drag-target-span">${numToDrop}</span>`;
+            initDragDrop('drag-target-span', 'cell-r3-c5');
+        } else if (mode === '2digit') {
+            const cell = document.getElementById('cell-r1-c4');
+            cell.innerHTML = `<span class="draggable-span" id="drag-target-span">${dividend % 10}</span>`;
+            initDragDrop('drag-target-span', 'cell-r3-c4');
+        }
+    }
+    if (state === 9) { // おろす完了
+        if (mode === '3digit1') {
+            const numToDrop = Math.floor((dividend % 100) / 10);
+            document.getElementById('cell-r1-c4').innerText = numToDrop;
+            document.getElementById('cell-r3-c4').innerText = numToDrop;
+        } else if (mode === '3digit2') {
+            const numToDrop = dividend % 10;
+            document.getElementById('cell-r1-c5').innerText = numToDrop;
+            document.getElementById('cell-r3-c5').innerText = numToDrop;
+        } else if (mode === '2digit') {
+            document.getElementById('cell-r1-c4').innerText = dividend % 10;
+            document.getElementById('cell-r3-c4').innerText = dividend % 10;
+        }
+    }
+    if (state === 10) { // 2回目のたてる
+        if (mode === '3digit2') {
+            document.getElementById('cell-r0-c5').innerHTML = '<div class="box-input"></div>';
+        } else if (mode === '2digit') {
+            document.getElementById('cell-r0-c4').innerHTML = '<div class="box-input"></div>';
+        }
+    }
+    if (state === 13) { // かけ算2完了
+        if (mode === '3digit1') {
+            const prod = sub2;
+            document.getElementById('cell-r4-c3').innerText = Math.floor(prod / 10) || '';
+            document.getElementById('cell-r4-c4').innerText = prod % 10;
+            document.getElementById('cell-r4-c3').classList.remove('border-hidden');
+            document.getElementById('cell-r4-c4').classList.remove('border-hidden');
+        } else if (mode === '3digit2') {
+            const prod = sub2;
+            document.getElementById('cell-r4-c4').innerText = Math.floor(prod / 10) || '';
+            document.getElementById('cell-r4-c5').innerText = prod % 10;
+            document.getElementById('cell-r4-c4').classList.remove('border-hidden');
+            document.getElementById('cell-r4-c5').classList.remove('border-hidden');
+        } else {
+            const prod = q2 * divisor;
+            document.getElementById('cell-r4-c3').innerText = Math.floor(prod / 10) || '';
+            document.getElementById('cell-r4-c4').innerText = prod % 10;
+            document.getElementById('cell-r4-c3').classList.remove('border-hidden');
+            document.getElementById('cell-r4-c4').classList.remove('border-hidden');
+        }
+    }
+    if (state === 15) { // ひき算2完了
+        if (mode === '3digit1') {
+            const minuend1 = (parseInt(document.getElementById('cell-r3-c3').innerText) || 0) * 10
+                           + (parseInt(document.getElementById('cell-r3-c4').innerText) || 0);
+            const diff = minuend1 - sub2;
+            document.getElementById('cell-r5-c4').innerText = diff > 0 ? diff : '';
+        } else if (mode === '3digit2') {
+            document.getElementById('cell-r5-c5').innerText = '0';
+            document.getElementById('instruction').innerText = answerText();
+            showClearEffect();
+        } else {
+            document.getElementById('cell-r5-c4').innerText = '0';
+            document.getElementById('instruction').innerText = answerText();
+            showClearEffect();
+        }
+    }
+
+    // 3けた÷1けた（商3けた）の3回目
+    if (mode === '3digit1') {
+        if (state === 16) {
+            const cell = document.getElementById('cell-r1-c5');
+            const numToDrop = dividend % 10;
+            cell.innerHTML = `<span class="draggable-span" id="drag-target-span">${numToDrop}</span>`;
+            initDragDrop('drag-target-span', 'cell-r5-c5');
+        }
+        if (state === 17) {
+            const numToDrop = dividend % 10;
+            document.getElementById('cell-r1-c5').innerText = numToDrop;
+            document.getElementById('cell-r5-c5').innerText = numToDrop;
+        }
+        if (state === 18) {
+            document.getElementById('cell-r0-c5').innerHTML = '<div class="box-input"></div>';
+        }
+        if (state === 21) {
+            const prod = sub3;
+            document.getElementById('cell-r6-c4').innerText = Math.floor(prod / 10) || '';
+            document.getElementById('cell-r6-c5').innerText = prod % 10;
+            document.getElementById('cell-r6-c4').classList.remove('border-hidden');
+            document.getElementById('cell-r6-c5').classList.remove('border-hidden');
+        }
+        if (state === 23) {
+            document.getElementById('cell-r7-c5').innerText = '0';
+            document.getElementById('instruction').innerText = answerText();
+            showClearEffect();
+        }
+    }
+
+    // おわり：答えを出して、はなまる（すでに出ていれば出さない）
+    if (s.type === 'finish') {
+        document.getElementById('instruction').innerText = answerText();
+        if (!document.getElementById('hanamaru').classList.contains('show')) {
+            showClearEffect();
+        }
+    }
+
+    // おろす：おろす先に ↓
+    if (s.type === 'drag_drop') {
+        const targetCell = document.getElementById(`cell-${s.target}`);
+        if (targetCell && !targetCell.querySelector('.guide-arrow')) {
+            const arrow = document.createElement('div');
+            arrow.className = 'guide-arrow';
+            arrow.innerText = '↓';
+            targetCell.appendChild(arrow);
+        }
+    }
+}
+
+// --- ドラッグ＆ドロップ（おろす）---
+function initDragDrop(spanId, targetId) {
+    const span = document.getElementById(spanId);
+    let isDragging = false;
+    let startX, startY;
+
+    span.onpointerdown = (e) => {
+        if (states[state].type !== 'drag_drop') return;
+        isDragging = true;
+        span.setPointerCapture(e.pointerId);
+        startX = e.clientX;
+        startY = e.clientY;
+        span.style.position = 'relative';
+        span.classList.remove('hint-glow');
+        playSound('click');
+    };
+
+    span.onpointermove = (e) => {
+        if (!isDragging) return;
+        const dy = e.clientY - startY;
+        span.style.transform = `translate(0px, ${dy}px)`;
+    };
+
+    span.onpointerup = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        span.releasePointerCapture(e.pointerId);
+
+        const targetEl = document.getElementById(targetId);
+        const targetRect = targetEl.getBoundingClientRect();
+        const spanRect = span.getBoundingClientRect();
+
+        // 中心点距離によるスナップ判定
+        const spanCX = spanRect.left + spanRect.width / 2;
+        const spanCY = spanRect.top + spanRect.height / 2;
+        const targetCX = targetRect.left + targetRect.width / 2;
+        const targetCY = targetRect.top + targetRect.height / 2;
+
+        if (Math.hypot(spanCX - targetCX, spanCY - targetCY) < 50) {
+            playSound('click');
+            state++;
+            updateUI();
+        } else {
+            handleWrong(spanId);
+            span.style.transition = 'transform 0.3s';
+            span.style.transform = 'translate(0px, 0px)';
+            setTimeout(() => { span.style.transition = ''; }, 300);
+        }
+    };
+}
+
+// --- まちがえたとき：ブブー・「ちがうよ！」・ゆれる・連続正解を0に ---
+function handleWrong(elementId, expectedAction) {
+    playSound('wrong');
+    const popup = document.getElementById('popup');
+    popup.classList.add('show');
+    setTimeout(() => popup.classList.remove('show'), 1000);
+
+    // ヒントの光をクリア（誤タップ時に残らないように）
+    document.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
+
+    // エラー記録とコンボリセット
+    if (chal.on) { chal.miss++; chal.missNow++; }   // 10問チャレンジの記録
+    comboCount = 0;
+    document.getElementById('combo-count').innerText = comboCount;
+    const s = states[state];
+    if (s) {
+        // actionボタン誤押下時は、本来押すべき行為（s.expect）で分類
+        if (s.type === 'action' && s.expect && errorStats[s.expect] !== undefined) {
+            errorStats[s.expect]++;
+        }
+        // 商を立てる位置を選ぶステップ（click_cell）はたてるに分類
+        else if (s.type === 'click_cell') {
+            errorStats.tateru++;
+        }
+        // それ以外は指示文のキーワードで分類
+        else if (s.text.includes("たて")) errorStats.tateru++;
+        else if (s.text.includes("かけ")) errorStats.kakeru++;
+        else if (s.text.includes("ひき")) errorStats.hiku++;
+        else if (s.text.includes("おろ")) errorStats.orosu++;
+        else errorStats.other++;
+    }
+
+    if (elementId) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.classList.remove('shake');
+            void el.offsetWidth; // reflow
+            el.classList.add('shake');
+        }
+    }
+}
+
+// ===== 10問チャレンジ =====
+// どのタブでも使える。10問おわると、ノーミスの数・まちがえた回数・かかった時間を出す。
+let chal = { on: false, total: 10, no: 0, miss: 0, missNow: 0, perfect: 0, t0: 0 };
+
+function chalUpdateBar() {
+    document.getElementById('btn-challenge').classList.toggle('on', chal.on);
+    document.getElementById('chal-bar').style.display = chal.on ? 'flex' : 'none';
+    if (!chal.on) return;
+    let dots = '';
+    for (let i = 0; i < chal.total; i++) dots += (i < chal.no) ? '●' : '○';
+    document.getElementById('chal-dots').innerText = dots;
+    document.getElementById('chal-count').innerText = `${Math.min(chal.no + 1, chal.total)}問め / ${chal.total}`;
+}
+
+function chalReset() {          // はじめから数えなおす
+    chal.no = 0; chal.miss = 0; chal.missNow = 0; chal.perfect = 0; chal.t0 = Date.now();
+    document.getElementById('chal-result').classList.remove('show');
+    chalUpdateBar();
+}
+
+function chalDone() {           // 1問おわったときに呼ぶ
+    if (!chal.on) return;
+    if (chal.missNow === 0) chal.perfect++;
+    chal.no++;
+    chalUpdateBar();
+    if (chal.no < chal.total) {
+        setTimeout(() => { if (chal.on) initGame(); }, 1800);   // つぎの問題へ
+        return;
+    }
+    const sec = Math.floor((Date.now() - chal.t0) / 1000);
+    const msg = (chal.perfect === chal.total) ? 'ぜんぶノーミス！ すばらしい！'
+              : (chal.perfect >= chal.total - 2) ? 'よくがんばりました！'
+              : 'つぎは もっとできる！';
+    setTimeout(() => {
+        document.getElementById('chal-lines').innerHTML =
+            `<div>ノーミスでできた問題　<b>${chal.perfect}</b> / ${chal.total}</div>` +
+            `<div>まちがえた回数　<b>${chal.miss}</b> 回</div>` +
+            `<div>かかった時間　<b>${Math.floor(sec / 60)}</b> 分 <b>${sec % 60}</b> 秒</div>` +
+            `<div class="chal-msg">${msg}</div>`;
+        document.getElementById('chal-result').classList.add('show');
+    }, 1500);
+}
+
+document.getElementById('btn-challenge').addEventListener('click', () => {
+    chal.on = !chal.on;
+    playSound('click');
+    chalReset();
+    initGame();
+});
+document.getElementById('btn-chal-again').addEventListener('click', () => { chalReset(); initGame(); });
+document.getElementById('btn-chal-quit').addEventListener('click', () => { chal.on = false; chalReset(); initGame(); });
+
+// --- 正解して1問おわったとき：はなまる・ピンポン・紙吹雪・時間とアドバイス・連続正解 ---
+function showClearEffect() {
+    document.getElementById('hanamaru').classList.add('show');
+    playSound('correct');
+
+    if (typeof confetti !== 'undefined') {
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#ffeb3b', '#ff9800', '#4caf50', '#00bcd4', '#e91e63']
+        });
+    }
+
+    // タイム測定、アドバイス、コンボ
+    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    let advice = "";
+    let maxError = 0;
+    let worstType = "";
+    for (const [key, val] of Object.entries(errorStats)) {
+        if (val > maxError) {
+            maxError = val;
+            worstType = key;
+        }
+    }
+
+    if (maxError > 0) {
+        if (worstType === 'tateru') advice = "「たてる」をもう少しがんばろう！";
+        else if (worstType === 'kakeru') advice = "「かける」の計算に気をつけよう！";
+        else if (worstType === 'hiku') advice = "「ひき算」をていねいにやろう！";
+        else if (worstType === 'orosu') advice = "「おろす」場所をたしかめよう！";
+        else advice = "つぎはノーミスをめざそう！";
+    } else {
+        advice = "かんぺき！すばらしい！";
+    }
+
+    comboCount++;
+    document.getElementById('combo-count').innerText = comboCount;
+    const comboSpan = document.getElementById('combo-count');
+    comboSpan.style.transform = 'scale(1.5)';
+    setTimeout(() => comboSpan.style.transform = 'scale(1)', 300);
+
+    setTimeout(() => {
+        document.getElementById('instruction').innerHTML = `${answerText()}<br><span style="font-size: 1rem; color: #d32f2f;">🕒 ${timeTaken}秒！ ${advice}</span>`;
+    }, 500);
+
+    chalDone();   // 10問チャレンジ中なら、1問すすめる
+
+    // ふつうの ときは、はなまるの 2秒後に 自動で 次の 問題へ
+    // （10問チャレンジ・テストの練習は それぞれの しくみで すすむ。2秒の 間に タブなどで 問題が かわったら 何もしない）
+    const doneStates = states;
+    setTimeout(() => {
+        if (states !== doneStates) return;
+        if (chal.on || (window.TestRun && TestRun.on())) return;
+        initGame();
+    }, 2000);
+}
+
+// --- イベントリスナー ---
+// たてる・かける・ひく・おろす
+['tateru', 'kakeru', 'hiku', 'orosu'].forEach(action => {
+    document.getElementById(`btn-${action}`).addEventListener('click', () => {
+        const s = states[state];
+        if (s.type === 'wait') return; // 演出中は操作を無視
+        if (s.type === 'action' && s.expect === action) {
+            playSound('click');
+            state++;
+            updateUI();
+        } else {
+            handleWrong(`btn-${action}`);
+        }
+    });
+});
+
+// マスをタップ
+document.querySelectorAll('.cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+        const s = states[state];
+        const cellId = cell.id.replace('cell-', '');
+
+        if (s.type === 'click_cell') {
+            if (cellId === s.expect) {
+                playSound('click');
+                state++;
+                updateUI();
+            } else {
+                handleWrong(cell.id);
+            }
+        } else if (s.type === 'click_cells') {
+            if (!s.expect.includes(cellId)) {
+                handleWrong(cell.id);
+                return;
+            }
+            if (!selectedCells.includes(cellId)) {
+                selectedCells.push(cellId);
+                cell.classList.add('selected');
+                playSound('click');
+            }
+            if (s.expect.every(id => selectedCells.includes(id))) {
+                const cur = state;
+                setTimeout(() => {
+                    if (state !== cur) return; // すでに次へ進んでいたら二重に進めない
+                    state++;
+                    updateUI();
+                }, 300);
+            }
+        } else if (s.type === 'click_cells_group') {
+            const allValid = s.expectGroups.flat();
+            if (!allValid.includes(cellId)) {
+                handleWrong(cell.id);
+                return;
+            }
+
+            const targetGroup = s.expectGroups.find(group => group.includes(cellId));
+            const validCells = targetGroup.filter(id => {
+                const el = document.getElementById(`cell-${id}`);
+                const text = el.textContent || el.innerText || '';
+                return text.trim() !== '';
+            });
+
+            let isNewSelection = false;
+
+            validCells.forEach(id => {
+                if (!selectedCells.includes(id)) {
+                    selectedCells.push(id);
+                    isNewSelection = true;
+                }
+            });
+
+            if (isNewSelection) {
+                playSound('click');
+                if (validCells.length === 1) {
+                    document.getElementById(`cell-${validCells[0]}`).classList.add('selected');
+                } else if (validCells.length >= 2) {
+                    // 左端→中央→右端でカプセル型の選択マークを作る
+                    validCells.forEach((id, i) => {
+                        const cls = i === 0 ? 'selected-group-left'
+                                  : i === validCells.length - 1 ? 'selected-group-right'
+                                  : 'selected-group-mid';
+                        document.getElementById(`cell-${id}`).classList.add(cls);
+                    });
+                }
+            }
+
+            const isCorrect = s.expectGroups.every(group => {
+                const groupValidCells = group.filter(id => {
+                    const el = document.getElementById(`cell-${id}`);
+                    const text = el.textContent || el.innerText || '';
+                    return text.trim() !== '';
+                });
+                if (groupValidCells.length === 0) return true;
+                return groupValidCells.every(id => selectedCells.includes(id));
+            });
+
+            if (isCorrect) {
+                const cur = state;
+                setTimeout(() => {
+                    if (state !== cur) return; // すでに次へ進んでいたら二重に進めない
+                    state++;
+                    updateUI();
+                }, 300);
+            }
+        }
+    });
+});
+
+// テンキー
+document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const s = states[state];
+        if (s.type === 'input') {
+            if (s.free && hiLay && hiLay.onKey) { hiLay.onKey(btn.dataset.val); return; }   // 等しい比を作る：答えが いくつも ある 入力
+            const raw = btn.dataset.val;
+            // 数字は数として、小数点や ×÷＋− は文字のまま持つ
+            const val = /^[0-9]$/.test(raw) ? parseInt(raw, 10) : raw;
+            const write = v => {
+                const el = document.getElementById(`cell-${s.targetCell}`);
+                if (el) el.innerText = v;
+            };
+            if (val === s.expect()) {
+                playSound('click');
+                write(val);
+                // next が指定されていればそこへ（手順を飛ばしたいとき）
+                state = (s.next !== undefined) ? s.next : state + 1;
+                updateUI();
+            } else if (s.altExpect && val === s.altExpect()) {
+                // 別解 → 指定の手順へ
+                playSound('click');
+                write(val);
+                state = s.altNext;
+                updateUI();
+            } else if (Array.isArray(s.alts) && s.alts.some(a => val === a.expect())) {
+                // 別解（複数）
+                const hit = s.alts.find(a => val === a.expect());
+                playSound('click');
+                write(val);
+                state = hit.next;
+                updateUI();
+            } else {
+                handleWrong('numpad');
+            }
+        }
+    });
+});
+
+// キーボード：数字キー（上の段・テンキーの どちらも）で、画面の テンキーを おしたのと 同じに する
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    // NumLock が 切れていても、テンキーの 数字は 数字として あつかう
+    const m = /^[0-9]$/.test(e.key) ? [null, e.key] : /^Numpad([0-9])$/.exec(e.code || '');
+    if (!m) return;
+    const s = states[state];
+    if (!s || s.type !== 'input') return;
+    const btn = document.querySelector(`#numpad .num-btn[data-val="${m[1]}"]`);
+    if (!btn) return;
+    e.preventDefault();
+    btn.click();
+});
+
+// ヒント：いま押すボタン・マス・テンキーの数を光らせる
+document.getElementById('btn-hint').addEventListener('click', () => {
+    const s = states[state];
+    if (isHi(mode) && hiLay && hiLay.onHint) hiLay.onHint(s);   // 比のタブの ヒントの 見た目（比の値：「：」→「÷」）
+    if (s.type === 'action') {
+        document.getElementById(`btn-${s.expect}`).classList.add('hint-glow');
+    } else if (s.type === 'click_cell') {
+        document.getElementById(`cell-${s.expect}`).classList.add('hint-glow');
+    } else if (s.type === 'click_cells') {
+        s.expect.forEach(id => {
+            if (!selectedCells.includes(id)) {
+                document.getElementById(`cell-${id}`).classList.add('hint-glow');
+            }
+        });
+    } else if (s.type === 'click_cells_group') {
+        s.expectGroups.flat().forEach(id => {
+            if (!selectedCells.includes(id)) {
+                document.getElementById(`cell-${id}`).classList.add('hint-glow');
+            }
+        });
+    } else if (s.type === 'input') {
+        const key = document.querySelector(`.num-btn[data-val="${s.expect()}"]`);
+        if (key && !isHi(mode)) key.classList.add('hint-glow');   // 比のタブでは 答えの 数字を 光らせない
+        const cell = document.getElementById(`cell-${s.targetCell}`);
+        const box = cell && cell.querySelector('.box-input');
+        if (box) box.classList.add('hint-glow');
+    } else if (s.type === 'choose') {
+        // 比のタブでは 答えの ㋐〜㋓ を 光らせない
+    } else if (s.type === 'drag_drop') {
+        document.getElementById('drag-target-span').classList.add('hint-glow');
+        document.getElementById(`cell-${s.target}`).classList.add('hint-glow');
+    }
+});
+
+// もう一度（＝新しい問題）
+document.getElementById('btn-reset').addEventListener('click', initGame);
+
+// 上のタブ
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const wrap = GROUP_SUB[btn.dataset.group];
+        if (wrap) {
+            // いま選ばれている小タブの見本問題から始める
+            const sub = document.querySelector(`#${wrap} .level-btn.active`)
+                     || document.querySelector(`#${wrap} .level-btn`);
+            currentMode = sub.dataset.mode;
+        } else {
+            currentMode = btn.dataset.mode;
+        }
+        forceProblem = TAB_PROBLEM[currentMode] || null;
+        if (chal.on) chalReset();   // タブを変えたら、10問チャレンジは最初から
+        initGame();
+    });
+});
+
+// 小タブ
+Object.values(GROUP_SUB).forEach(id => {
+    document.querySelectorAll(`#${id} .level-btn`).forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.parentElement.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b === btn));
+            currentMode = btn.dataset.mode;
+            forceProblem = TAB_PROBLEM[currentMode] || null;   // 最初の1問は見本問題
+            playSound('click');
+            if (chal.on) chalReset();                          // 小タブを変えたら、10問チャレンジは最初から
+            initGame();
+        });
+    });
+});
+
+// =====================================================================
+// 1問はじめる（タブ・小タブ・もう一度・10問チャレンジの次の問題・テストの練習 から呼ばれる）
+// =====================================================================
+function initGame() {
+    mode = currentMode;
+    chal.missNow = 0;   // 10問チャレンジ：この問題でまちがえた回数
+    // いまのモードの小タブだけ出す
+    Object.values(GROUP_SUB).forEach(id => {
+        const w = document.getElementById(id);
+        w.style.display = w.querySelector(`.level-btn[data-mode="${mode}"]`) ? 'flex' : 'none';
+    });
+    generateProblem();
+    forceProblem = null;   // 見本問題は1回だけ
+    generateStates();
+    state = 0;
+    selectedCells = [];
+    hiPicked = [];
+
+    startTime = Date.now();
+    errorStats = { tateru: 0, kakeru: 0, hiku: 0, orosu: 0, other: 0 };
+    document.querySelectorAll('.guide-arrow').forEach(el => el.remove());
+
+    // UIリセット
+    document.querySelectorAll('.cell').forEach(cell => {
+        cell.innerText = '';
+        cell.innerHTML = '';
+        cell.className = 'cell';
+    });
+    document.getElementById('hanamaru').classList.remove('show');
+
+    // 計算タブ：マスの代わりに式の板を出して、ここで終わり
+    const kei = isKei(mode);
+    const hi = isHi(mode);
+    document.querySelector('.grid').style.display = (kei || hi) ? 'none' : 'grid';
+    document.getElementById('kei-panel').style.display = kei ? 'flex' : 'none';
+    document.getElementById('hi-panel').style.display = hi ? 'flex' : 'none';
+    document.querySelector('.controls').classList.toggle('kei-mode', kei || hi);
+    if (hi) {
+        renderHi();
+        updateUI();
+        return;
+    }
+    if (kei) {
+        renderKeiBoxes();
+        updateUI();
+        return;
+    }
+
+    // わり算の筆算：罫線（商の上線・ひき算の線。ひき算の線は border-hidden でかくしておく）
+    if (mode === '3digit1') {
+        [3, 4, 5].forEach(c => document.getElementById(`cell-r0-c${c}`).classList.add('border-bottom'));
+        [3, 4].forEach(c => {
+            document.getElementById(`cell-r2-c${c}`).classList.add('border-bottom', 'border-hidden');
+            document.getElementById(`cell-r4-c${c}`).classList.add('border-bottom', 'border-hidden');
+        });
+        [4, 5].forEach(c => document.getElementById(`cell-r6-c${c}`).classList.add('border-bottom', 'border-hidden'));
+    } else if (mode === '3digit2') {
+        [3, 4, 5].forEach(c => document.getElementById(`cell-r0-c${c}`).classList.add('border-bottom'));
+        [3, 4].forEach(c => document.getElementById(`cell-r2-c${c}`).classList.add('border-bottom', 'border-hidden'));
+        [4, 5].forEach(c => document.getElementById(`cell-r4-c${c}`).classList.add('border-bottom', 'border-hidden'));
+    } else {
+        [3, 4].forEach(c => document.getElementById(`cell-r0-c${c}`).classList.add('border-bottom'));
+        [3, 4].forEach(c => {
+            document.getElementById(`cell-r2-c${c}`).classList.add('border-bottom', 'border-hidden');
+            document.getElementById(`cell-r4-c${c}`).classList.add('border-bottom', 'border-hidden');
+        });
+    }
+
+    // 「）」：わられる数が始まるセルの左端
+    document.getElementById('cell-r1-c3').classList.add('paren-left');
+
+    // 問題のセット：わる数 c2 ／ わられる数 c3から右へ
+    document.getElementById('cell-r1-c2').innerText = divisor;
+    if (mode !== '2digit') {
+        document.getElementById('cell-r1-c3').innerText = Math.floor(dividend / 100);
+        document.getElementById('cell-r1-c4').innerText = Math.floor((dividend % 100) / 10);
+        document.getElementById('cell-r1-c5').innerText = dividend % 10;
+    } else {
+        document.getElementById('cell-r1-c3').innerText = Math.floor(dividend / 10);
+        document.getElementById('cell-r1-c4').innerText = dividend % 10;
+    }
+
+    updateUI();
+}
+
+// 起動：最初の1問も見本問題から
+forceProblem = TAB_PROBLEM[currentMode] || null;
+window.onload = () => { initGame(); };
+</script>
+
+<!-- ============================================================
+     📝 テストの 練習 ⓪つなぎ（このアプリ用）
+     ②しくみ が使う MODES・setMode・showHanamaru・applyJudge を、ここで用意する。
+     ・本体の showClearEffect（はなまる）と handleWrong（まちがい）を 外から つつむ。
+     ============================================================ -->
+<script>
+/* 小タブの 一覧（タブの ボタンから 作る）*/
+const MODES = {};
+document.querySelectorAll('#mode-tabs .tab-btn').forEach(tab => {
+  const label = tab.textContent.trim();
+  if (tab.dataset.mode) { MODES[tab.dataset.mode] = { label: label }; return; }
+  const wrap = document.getElementById(GROUP_SUB[tab.dataset.group]);
+  if (!wrap) return;
+  wrap.querySelectorAll('.level-btn[data-mode]').forEach(b => {
+    MODES[b.dataset.mode] = { label: label, sub: '（' + b.textContent.trim() + '）' };
+  });
+});
+
+/* 小タブを 開く（タブを おしたのと 同じ 見た目に して、新しい 問題を 出す）*/
+function setMode(name) {
+  const sub = document.querySelector('.level-wrap .level-btn[data-mode="' + name + '"]');
+  let tab = null;
+  if (sub) {
+    sub.parentElement.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b === sub));
+    const g = Object.keys(GROUP_SUB).find(k => GROUP_SUB[k] === sub.parentElement.id);
+    tab = document.querySelector('#mode-tabs .tab-btn[data-group="' + g + '"]');
+  } else {
+    tab = document.querySelector('#mode-tabs .tab-btn[data-mode="' + name + '"]');
+  }
+  document.querySelectorAll('#mode-tabs .tab-btn').forEach(b => b.classList.toggle('active', b === tab));
+  currentMode = name;
+  forceProblem = window.TEST_MIHON ? (TAB_PROBLEM[name] || null) : null;   // テストでは ふつう ランダムの 問題
+  initGame();
+}
+
+/* はなまる・まちがいの 知らせ口 */
+function showHanamaru() { if (window.TestRun && TestRun.on()) TestRun.onDone(); }
+function applyJudge(r)  { if (window.TestRun && r && !r.ok && !r.skip) TestRun.miss(); }
+
+/* 本体の はなまる・まちがいを つつんで、上の 知らせ口を よぶ */
+{
+  const _clear = showClearEffect;
+  showClearEffect = function () { const v = _clear.apply(this, arguments); showHanamaru(); return v; };
+  const _wrong = handleWrong;
+  handleWrong = function () { applyJudge({ ok: false }); return _wrong.apply(this, arguments); };
+}
+
+/* 10問チャレンジ：テストを 始めるとき オンなら 切る */
+window.Challenge10 = { isOn: () => chal.on };
+
+/* ②が 作った 帯に「とばす」ボタンを 足す／文字を このアプリの 丸ゴシックに そろえる */
+document.addEventListener('DOMContentLoaded', () => {
+  const stop = document.getElementById('test-stop');
+  if (stop && !document.getElementById('test-skip')) {
+    const b = document.createElement('button');
+    b.id = 'test-skip'; b.type = 'button'; b.textContent = 'とばす';
+    stop.parentNode.insertBefore(b, stop);
+  }
+  const css = document.createElement('style');
+  css.textContent =
+    '#test-mount button,#test-bar,#test-result .tr-card,#test-result button{font-family:"M PLUS Rounded 1c",sans-serif !important;font-weight:700;}' +
+    '#test-btn{font-size:1.05rem !important;}' +
+    '#test-skip{font-size:.9em;padding:3px 10px;border-radius:14px;border:2px solid #7fd3c6;background:#e3f6f2;color:#138577;cursor:pointer;}' +
+    'body.testing #btn-challenge,body.testing #chal-bar{display:none !important;}';
+  document.head.appendChild(css);
+});
+</script>
+
+<!-- ============================================================
+     📝 テストの 練習 ①せってい（アプリごとに 書きかえる）
+     mode は 小タブの data-mode。1つの 大問 ＝ 1問（はなまるが 出たら つぎの 大問へ）
+     ============================================================ -->
+<script>
+window.TEST_MIHON = false;   // true に すると、各大問の 問題が タブの 見本問題（TAB_PROBLEM）に なる
+window.TEST_SETTEI = {
+  button: '📝 テストの 練習',
+  tests: [
+    { title:'比の テスト（おもて）', items:[
+      { no:'大問1',   mode:'hyou1', name:'割合を 比で 表す' },
+      { no:'大問2①', mode:'atai1', name:'比の値（整数）' },
+      { no:'大問2②', mode:'atai2', name:'比の値（小数）' },
+      { no:'大問3',   mode:'hito1', name:'等しい 比を 見つける' },
+      { no:'大問4',   mode:'hito2', name:'□に あてはまる 数' },
+      { no:'大問5①', mode:'kan1',  name:'比を 簡単に（整数）' },
+      { no:'大問5②', mode:'kan2',  name:'比を 簡単に（小数）' },
+      { no:'大問5③', mode:'kan3',  name:'比を 簡単に（分数）' },
+      { no:'大問6①', mode:'xmo1',  name:'x の 表す 数（整数）' },
+      { no:'大問6②', mode:'xmo2',  name:'x の 表す 数（小数）' } ] },
+    { title:'比の テスト（うら）', items:[
+      { no:'大問1', mode:'bun1', name:'一方の 量を 求める' },
+      { no:'大問2', mode:'bun1', name:'一方の 量を 求める' },
+      { no:'大問3', mode:'bun2', name:'全体を 部分に 分ける' } ] }
+  ],
+  parts: { after:'#chal-bar', next:'#test-skip', hint:'#btn-hint', tabs:'#mode-tabs,.level-wrap', chalBtn:'#btn-challenge' }
+};
+</script>
+
+<!-- ============================================================
+     📝 テストの 練習 ②しくみ（test_renshu v1・2026-09-26）— さわらない
+     shukuzu1.html の B1 を、ほかの アプリでも つかえるように 取り出したもの。
+     ・showHanamaru と applyJudge を 外から つつんで（ラップして）つかう。
+     ・土台に もう「window.TestRun」の 2行が 入っている ときは つつまない（二重に 数えない）。
+     ・10問チャレンジ（Challenge10）とは べつの しくみ。始めると チャレンジは 切る。
+     ============================================================ -->
+<script>
+window.TestRun = (function(){
+  'use strict';
+  const S = window.TEST_SETTEI;
+  const P = Object.assign({ after:'#chal-mount', next:'#next', hint:'#hintBtn',
+                            tabs:'#gtabs,#subTabs', chalBtn:'#btn-challenge' }, (S && S.parts) || {});
+  const $ = id => document.getElementById(id);
+  const q = sel => sel ? document.querySelector(sel) : null;
+
+  /* ---- 土台に 必要な ものが あるか ---- */
+  const lack = [];
+  if(typeof MODES        !== 'object')   lack.push('MODES');
+  if(typeof setMode      !== 'function') lack.push('setMode');
+  if(typeof showHanamaru !== 'function') lack.push('showHanamaru');
+  if(typeof applyJudge   !== 'function') lack.push('applyJudge');
+  if(!S || !Array.isArray(S.tests) || !S.tests.length) lack.push('TEST_SETTEI.tests');
+  if(lack.length){ console.warn('テストの練習：土台に ないので うごきません →', lack.join('・')); return null; }
+
+  /* ---- せっていを たしかめる（ない 小タブは とばす）---- */
+  const TESTS = S.tests.map(t => ({
+    title: t.title || 'テスト',
+    items: (t.items || []).filter(it => {
+      if(it && MODES[it.mode]) return true;
+      console.warn('テストの練習：小タブ「' + (it && it.mode) + '」が ないので とばします（' + t.title + '）');
+      return false;
+    })
+  })).filter(t => t.items.length);
+  if(!TESTS.length){ console.warn('テストの練習：出せる 大問が ありません'); return null; }
+
+  const setOf = it => Object.assign({}, it.meth !== undefined ? { meth: it.meth } : {}, it.set || {});
+  const itemName = it => it.name || ((MODES[it.mode].label || it.mode) + (MODES[it.mode].sub || ''));
+  const nowMode = () => (typeof mode === 'string' ? mode : '');
+  const waitMs = () => (typeof HANAMARU_SHOW_MS === 'number' ? HANAMARU_SHOW_MS : 2000)
+                     + (typeof AUTO_NEXT_MS     === 'number' ? AUTO_NEXT_MS     : 1500);
+
+  let run = null;   // { t, i, rec:[{miss,hint,st}], back, saved }
+  let myTimer = 0;
+
+  /* ---- 見た目（CSS は ここで 足す。土台の <style> は さわらない）---- */
+  const css = document.createElement('style');
+  css.id = 'test-style';
+  css.textContent = [
+    '#test-mount{position:relative;flex:0 0 auto;display:flex;align-items:center;}',
+    '#test-btn{font-family:"Yusei Magic",sans-serif;font-size:clamp(13px,1.7vw,17px);padding:5px 14px;white-space:nowrap;',
+    '  color:#138577;background:#e3f6f2;border:2px solid #7fd3c6;border-radius:20px;box-shadow:0 2px 0 #7fd3c6;cursor:pointer;}',
+    '#test-btn:focus-visible,#test-menu button:focus-visible,#test-bar button:focus-visible,#test-result button:focus-visible{outline:3px solid #138577;outline-offset:2px;}',
+    '#test-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:950;background:#fff;border:3px solid #d8ccae;',
+    '  border-radius:16px;padding:10px;box-shadow:0 8px 24px rgba(52,70,95,.20);flex-direction:column;gap:8px;min-width:270px;max-width:92vw;}',
+    '#test-menu.open{display:flex;}',
+    '#test-menu button{font-family:"Yusei Magic",sans-serif;font-size:17px;padding:11px 14px;border-radius:12px;border:3px solid #7fd3c6;',
+    '  background:#fff;color:#34465f;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;white-space:nowrap;}',
+    '#test-menu button:hover{background:#f1fbf9;}',
+    '#test-menu small{font-size:14px;color:#6a7d96;}',
+    '#test-bar{display:none;align-items:center;gap:8px;background:rgba(255,255,255,.94);border:2px solid #7fd3c6;border-radius:20px;',
+    '  padding:3px 5px 3px 12px;font-family:"Yusei Magic",sans-serif;color:#138577;white-space:nowrap;font-size:clamp(12px,1.5vw,16px);}',
+    '#test-dots{letter-spacing:1px;}',
+    '#test-stop{font-family:"Yusei Magic",sans-serif;font-size:.9em;padding:3px 10px;border-radius:14px;border:2px solid #d8ccae;background:#fff;color:#6a7d96;cursor:pointer;}',
+    'body.testing #test-btn{display:none;}',
+    'body.testing #test-bar{display:flex;}',
+    'body.testing #chal-mount{display:none;}',
+    P.tabs.split(',').map(s => 'body.testing ' + s.trim()).join(',') + '{pointer-events:none;opacity:.45;}',
+    '#test-result{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}',
+    '#test-result.show{display:flex;}',
+    '#test-result .tr-card{background:#fff;border-radius:20px;padding:22px 26px;box-shadow:0 10px 40px rgba(0,0,0,.3);max-width:94vw;max-height:92vh;overflow:auto;',
+    '  font-family:"Yusei Magic",sans-serif;color:#34465f;}',
+    '#test-result .tr-title{font-size:clamp(20px,3vw,28px);color:#138577;text-align:center;margin-bottom:12px;}',
+    '#test-result table{border-collapse:collapse;font-size:clamp(14px,2vw,19px);margin:0 auto;}',
+    '#test-result td{padding:6px 10px;border-bottom:2px dashed #eadfc6;white-space:nowrap;}',
+    '#test-result td.no{color:#6a7d96;}',
+    '#test-result td.r-ok{color:#2bb673;}',
+    '#test-result td.r-ng{color:#e85d3b;}',
+    '#test-result td.r-sk{color:#9aa6b5;}',
+    '#test-result .tr-sum{text-align:center;margin-top:12px;font-size:clamp(16px,2.4vw,22px);}',
+    '#test-result .tr-sum b{color:#e85d3b;font-size:1.3em;}',
+    '#test-result .tr-btns{display:flex;gap:12px;justify-content:center;margin-top:16px;}',
+    '#test-result button{font-family:"Yusei Magic",sans-serif;font-size:18px;padding:11px 20px;border-radius:14px;cursor:pointer;}',
+    '#test-again{color:#fff;background:#1fae9c;border:none;box-shadow:0 3px 0 #138577;}',
+    '#test-close{color:#6a7d96;background:#fff;border:2px solid #d8ccae;}'
+  ].join('\n');
+  document.head.appendChild(css);
+
+  /* ---- ボタン・メニュー・帯（10問チャレンジの となり）---- */
+  const mount = document.createElement('div');
+  mount.id = 'test-mount';
+  mount.innerHTML =
+      '<button id="test-btn" type="button">' + (S.button || '📝 テストの 練習') + '</button>'
+    + '<div id="test-menu">'
+    +   TESTS.map((t,k) => '<button type="button" data-k="'+k+'">'+t.title+'<small>'+t.items.length+'問</small></button>').join('')
+    + '</div>'
+    + '<div id="test-bar"><span id="test-no"></span><span id="test-dots"></span>'
+    +   '<button id="test-stop" type="button">やめる</button></div>';
+  const anchor = q(P.after);
+  const header = document.querySelector('header');
+  if(anchor && anchor.parentNode) anchor.parentNode.insertBefore(mount, anchor.nextSibling);
+  else if(header) header.appendChild(mount);
+  else document.body.insertBefore(mount, document.body.firstChild);
+  const res = document.createElement('div');
+  res.id = 'test-result';
+  document.body.appendChild(res);
+
+  /* テストが 1つだけなら、メニューを 出さずに すぐ 始める */
+  $('test-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    if(TESTS.length === 1){ start(0); return; }
+    const m = $('test-menu');
+    m.classList.toggle('open');
+    if(m.classList.contains('open')) placeMenu();
+  });
+  /* せまい 画面で メニューが 左に はみ出す ときは、画面の 中へ ずらす */
+  function placeMenu(){
+    const m = $('test-menu');
+    m.style.left = ''; m.style.right = '';
+    const r = m.getBoundingClientRect(), mr = mount.getBoundingClientRect();
+    if(r.left < 8){ m.style.right = 'auto'; m.style.left = (8 - mr.left) + 'px'; }
+  }
+  $('test-menu').addEventListener('click', e => {
+    const b = e.target.closest('button[data-k]'); if(!b) return;
+    $('test-menu').classList.remove('open');
+    start(+b.dataset.k);
+  });
+  document.addEventListener('click', e => {
+    if(!e.target.closest('#test-mount')) $('test-menu').classList.remove('open');
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') $('test-menu').classList.remove('open');
+  });
+  $('test-stop').addEventListener('click', () => stop());
+  /* テストの あいだの「つぎの もんだい」は、その 大問を とばして つぎの 大問へ */
+  document.addEventListener('click', e => {
+    if(!run || !P.next || !e.target.closest(P.next)) return;
+    e.stopPropagation(); e.preventDefault();
+    skip();
+  }, true);
+  /* ヒントを 見たか（ボタンを おした あと hintOn が true なら）*/
+  const hb = q(P.hint);
+  if(hb) hb.addEventListener('click', () => setTimeout(() => {
+    const r = cur();
+    const on = (typeof hintOn === 'boolean') ? hintOn : true;
+    if(r && on && r.st === 'todo') r.hint = true;
+  }, 0));
+
+  /* ---- 土台の 2つの 関数を つつむ（土台に もう 2行 入っていれば つつまない）---- */
+  const BUILTIN = /TestRun/.test(String(showHanamaru)) || /TestRun/.test(String(applyJudge));
+  if(!BUILTIN){
+    const _show = showHanamaru;
+    showHanamaru = function(){
+      if(!run) return _show.apply(this, arguments);
+      /* はなまるは ふつうに 出す。同じ モードの つぎの 問題へは 行かせない（noAutoNext を 一時的に）*/
+      const m = (typeof M === 'object' && M) ? M : null;
+      const had = m && Object.prototype.hasOwnProperty.call(m, 'noAutoNext');
+      const old = m ? m.noAutoNext : undefined;
+      try{ if(m) m.noAutoNext = true; }catch(e){}
+      try{ _show.apply(this, arguments); }
+      finally{ try{ if(m){ if(had) m.noAutoNext = old; else delete m.noAutoNext; } }catch(e){} }
+      api.onDone();
+    };
+    const _judge = applyJudge;
+    applyJudge = function(r){
+      if(run && r && !r.ok && !r.skip) api.miss();
+      return _judge.apply(this, arguments);
+    };
+  }
+
+  /* ---- 中身 ---- */
+  function cur(){ return run ? run.rec[run.i] : null; }
+  function clearMine(){ clearTimeout(myTimer); myTimer = 0; }
+  function bar(){
+    if(!run) return;
+    const T = TESTS[run.t], it = T.items[run.i];
+    $('test-no').textContent = '📝 ' + (/^\d+$/.test(it.no) ? it.no+'問め' : it.no) + '（' + (run.i+1) + '／' + T.items.length + '）';
+    $('test-dots').textContent = run.rec.map((r,i) => r.st==='done' ? '●' : r.st==='skip' ? '－' : (i===run.i ? '◎' : '○')).join('');
+  }
+  /* set で かえる 値を、はじめに 1回だけ おぼえておく */
+  function saveSets(t){
+    const saved = {};
+    TESTS[t].items.forEach(it => {
+      const o = setOf(it), md = MODES[it.mode];
+      Object.keys(o).forEach(k => {
+        const key = it.mode + '\u0000' + k;
+        if(!(key in saved)) saved[key] = { md:md, k:k, had:Object.prototype.hasOwnProperty.call(md,k), v:md[k] };
+      });
+    });
+    return saved;
+  }
+  function restoreSets(saved){
+    Object.keys(saved || {}).forEach(key => {
+      const s = saved[key];
+      try{ if(s.had) s.md[s.k] = s.v; else delete s.md[s.k]; }catch(e){}
+    });
+  }
+  function go(i){
+    clearMine();
+    run.i = i;
+    const it = TESTS[run.t].items[i];
+    const o = setOf(it);
+    Object.keys(o).forEach(k => { try{ MODES[it.mode][k] = o[k]; }catch(e){} });
+    setMode(it.mode);
+    bar();
+  }
+  function start(t){
+    const cb = q(P.chalBtn);
+    if(window.Challenge10 && Challenge10.isOn && Challenge10.isOn() && cb) cb.click();
+    res.classList.remove('show');
+    let back = nowMode();
+    if(run){ back = run.back; restoreSets(run.saved); }
+    run = { t:t, i:0, rec:TESTS[t].items.map(() => ({ miss:0, hint:false, st:'todo' })), back:back, saved:saveSets(t) };
+    document.body.classList.add('testing');
+    go(0);
+  }
+  function next(){
+    if(!run) return;
+    if(run.i + 1 < run.rec.length) go(run.i + 1);
+    else finish();
+  }
+  function skip(){
+    const r = cur(); if(!r) return;
+    if(r.st !== 'done') r.st = 'skip';
+    clearMine();
+    if(typeof clearAutoNext === 'function') clearAutoNext();
+    next();
+  }
+  function finish(){
+    clearMine();
+    const T = TESTS[run.t];
+    let perfect = 0;
+    const rows = T.items.map((it,i) => {
+      const r = run.rec[i];
+      let tx, c;
+      if(r.st==='done' && r.miss===0){ tx = '⭕ ノーミス'; c = 'r-ok'; perfect++; }
+      else if(r.st==='done'){ tx = 'まちがい '+r.miss+'回'; c = 'r-ng'; }
+      else { tx = 'とばした'; c = 'r-sk'; }
+      return '<tr><td class="no">'+it.no+'</td><td>'+itemName(it)+'</td><td class="'+c+'">'+tx+'</td><td>'+(r.hint ? '💡' : '')+'</td></tr>';
+    }).join('');
+    res.innerHTML = '<div class="tr-card">'
+      + '<div class="tr-title">📝 '+T.title+'　おわり！</div>'
+      + '<table>'+rows+'</table>'
+      + '<div class="tr-sum">ノーミスで できた 問題　<b>'+perfect+'</b> ／ '+T.items.length+'</div>'
+      + '<div class="tr-btns"><button id="test-again" type="button">もう一度</button><button id="test-close" type="button">とじる</button></div>'
+      + '</div>';
+    res.classList.add('show');
+    $('test-again').onclick = () => start(run.t);
+    $('test-close').onclick = () => stop();
+    $('test-again').focus();
+  }
+  /* やめる／とじる：set で かえた 値を もどして、はじめの タブへ */
+  function stop(){
+    if(!run) return;
+    const back = run.back, saved = run.saved;
+    run = null;
+    clearMine();
+    res.classList.remove('show');
+    document.body.classList.remove('testing');
+    restoreSets(saved);
+    setMode(back && MODES[back] ? back : TESTS[0].items[0].mode);
+  }
+
+  const api = {
+    on: () => !!run,
+    /* showHanamaru から：その 大問は おわり。はなまるの あと つぎの 大問へ */
+    onDone(){
+      if(!run || res.classList.contains('show')) return !!run;
+      const r = cur(); r.st = 'done';
+      bar();
+      clearMine();
+      const go2 = () => { if(typeof autoTimers !== 'undefined') autoTimers = []; next(); };
+      if(typeof autoTimers !== 'undefined' && Array.isArray(autoTimers)) autoTimers.push(setTimeout(go2, waitMs()));
+      else myTimer = setTimeout(go2, waitMs());
+      return true;
+    },
+    /* applyJudge から：まちがい（skip で ない もの）*/
+    miss(){ const r = cur(); if(r && r.st === 'todo') r.miss++; },
+    /* 外から つかう とき用 */
+    start: t => start(t || 0),
+    stop:  () => stop(),
+    record: () => run ? JSON.parse(JSON.stringify(run.rec)) : null
+  };
+  return api;
+})();
+</script>
+<!-- 📝 テストの 練習 ここまで -->
+</body>
+</html>
